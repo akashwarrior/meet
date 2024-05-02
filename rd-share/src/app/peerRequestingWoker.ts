@@ -29,7 +29,7 @@ const sendRequest = async ({ roomID, displayName, uid }: { roomID: string, displ
         self.postMessage({ type: 4 });
         unsubscribe();
         deleteDoc(docs);
-    }, 2000);
+    }, 3000);
     const unsubscribe = onSnapshot(docs, (snapshot: DocumentData) => {
         const { status, waiting } = snapshot.data();
         timeout;
@@ -41,6 +41,7 @@ const sendRequest = async ({ roomID, displayName, uid }: { roomID: string, displ
         if (status) {
             self.postMessage({ type: 3, roomId: roomID });
         } else {
+            console.log("User declined your request.");
             self.postMessage({ type: 5 });
         }
     });

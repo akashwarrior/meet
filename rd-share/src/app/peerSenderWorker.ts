@@ -11,8 +11,10 @@ self.onmessage = ({ data }) => {
         case 1:
             const { offer } = data;
             const docOfferRef = doc(db, uid, "offer");
-            setDoc(docOfferRef, {
-                offer: { type: offer.type, sdp: offer.sdp }
+            deleteDoc(docOfferRef).finally(() => {
+                setDoc(docOfferRef, {
+                    offer: { type: offer.type, sdp: offer.sdp }
+                });
             });
             break;
         case 2:
@@ -34,9 +36,11 @@ self.onmessage = ({ data }) => {
     }
 }
 
-const handleSnapshots = (uid: string) => {
+const handleSnapshots = async (uid: string) => {
     const docAnswerRef = doc(db, uid, "answer");
     const docCandidateRef = doc(db, uid, "candidate");
+    await deleteDoc(docAnswerRef);
+    await deleteDoc(docCandidateRef);
 
     const unsubscribeAnswere = onSnapshot(docAnswerRef, snapshot => {
         const data = snapshot.data();

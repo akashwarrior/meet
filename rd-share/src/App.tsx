@@ -104,7 +104,7 @@ function App() {
     };
   }, []);
 
-  const handleReqReject = async () => {
+  const handleReqReject = () => {
     setReq(null);
     worker?.postMessage({ type: 2, uid: user?.uid });
   }
@@ -117,28 +117,39 @@ function App() {
 
   return (user &&
     <main>
-      {req?.displayName &&
-        (req.status == null ? <Request ownUID={user.uid} name={req.displayName} reqUID={req.uid} rejectReq={() => handleReqReject} />
-          : req.status == true &&
-          <h1>Sharing Screen with {req.displayName}</h1>
-        )
+      {
+        // Handeling sharing request if any and if sharing screen then showing whom to sharing screen with
+        req && req.status != true ? <Request ownUID={user.uid} name={req.displayName} reqUID={req.uid} rejectReq={handleReqReject} />
+          : req && <h1>Sharing Screen with {req.displayName}</h1>
       }
-      {search && <Search onHide={() => setSearch(false)} uid={user.uid} displayName={user.displayName} />}
+
+      {/* Search Component */}
+      {!req && search && <Search onHide={() => setSearch(false)} uid={user.uid} displayName={user.displayName} />}
+
       <header>
-        <h1>Hey {user?.displayName}!</h1>
+        <h1 className="user_name">Hey {user.displayName}!</h1>
         <button onClick={() => setSearch(true)} className="search">Search user..
           <span><kbd>Ctrl+K</kbd></span>
         </button>
+        <button className="search_icon" onClick={() => setSearch(true)}>
+          <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+          </svg>
+        </button>
+
         <button className="logout" onClick={() => worker?.postMessage({ type: 1 })}>Sign Out</button>
       </header>
+
       <div className="code_header">
+        {/* Users code which will be used to share screen */}
         <h1 className="code" onClick={handleCode}>{user.uid.slice(0, 3) + "-" + user.uid.slice(3)}</h1>
       </div>
 
+      {/* Previously shared screen with if any */}
       {recentUsers && <RecentUsers name={user.displayName} uid={user.uid} users={recentUsers} />}
 
       {/* Background Animted SVG */}
-      <svg fill="none" height="264" viewBox="0 0 891 264" width="891">
+      <svg className="main_bg" fill="none" height="264" viewBox="0 0 891 264" width="891">
         <path d="M388 96L388 68C388 65.7909 386.209 64 384 64L310 64" stroke="#fff"
           strokeOpacity="0.1" pathLength="1" strokeDashoffset="0px" strokeDasharray="1px 1px"></path>
         <path d="M349 150L73 150C70.7909 150 69 151.791 69 154L69 174" stroke="#fff"

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import '../styles/Room.css';
 
 export const Room = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,12 +32,6 @@ export const Room = () => {
             }
         }
 
-        peerConnection.onconnectionstatechange = () => {
-            const { connectionState } = peerConnection || {};
-            if (connectionState == 'connected') {
-            }
-        };
-
         return () => {
             peerConnection.close();
             worker.terminate();
@@ -45,7 +40,7 @@ export const Room = () => {
 
 
     return (
-        <section>
+        <section className="screenAccessSection">
             <video id="vdieo" playsInline autoPlay ref={videoRef} />
         </section>
     );

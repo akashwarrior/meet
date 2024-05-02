@@ -27,8 +27,9 @@ self.onmessage = ({ data }) => {
             });
             break;
         case 1:
-            auth.signOut();
-            postMessage({ type: 10 });
+            auth.signOut().then(() => {
+                self.postMessage({ type: 10 });
+            });
             break;
         case 2:
             const { uid } = data;
