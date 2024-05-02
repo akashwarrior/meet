@@ -5,4 +5,4 @@ This repo contains backend and frontend in seperate folder backend have websocke
 rd-share is also similar version of screen sharing but with improved and better UI and without needed of websocke because that part handled by firebase cloud firestore and also this time login is neccessay to access the website so firestore stay less load of annonymous users.
 
 
-you can also check https://rdshare.web.app/ to check this project live also open to update and fix issue so don't mind creating issue or merging something.
+you can also check https://remoteshare.web.app to check this project live also open to update and fix issue so don't mind creating issue or merging something.
