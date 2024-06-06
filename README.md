@@ -1,8 +1,6 @@
 # Remote-Connection
-This repo contains backend and frontend in seperate folder backend have websocket connections using socket.io and frontend have react js using vite and front looks for localhost at port 3000 to connect with server and both screen reciever and sender have to connect with backend server in order to get connected
+This repo contains react js using vite and firebase for server and both screen reciever and sender have to be either on same network or one of the device should be on mobile data otherwise it will not be able to find IP.
 
-
-rd-share is also similar version of screen sharing but with improved and better UI and without needed of websocke because that part handled by firebase cloud firestore and also this time login is neccessay to access the website so firestore stay less load of annonymous users.
-
+RD-share is similar version of screen sharing but with better UI and without needed of websocket because that part handled by firebase's cloud firestore and also this time login is neccessay to access the website so firestore stays less loaded from annonymous users. To get started with this project locally just make a firebase.tsx file in src directory with your firebase credentials and export getAuth() as auth and getFirestore() as db and you are good to go. 
 
 you can also check https://remoteshare.web.app to check this project live also open to update and fix issue so don't mind creating issue or merging something.
