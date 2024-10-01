@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { MainApp } from './App.tsx'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { RecoilRoot } from 'recoil'
-const Login = React.lazy(() => import('./Routes/Login.tsx'));
-const Room = React.lazy(() => import('./Routes/Room.tsx'));
+const Login = React.lazy(() => import('./routes/Login.tsx'));
+const Room = React.lazy(() => import('./routes/Room.tsx'));
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

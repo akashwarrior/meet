@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { db } from "../firebase";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
@@ -7,53 +7,85 @@ import '../styles/Room.css';
 export default function Room() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const roomId = useSearchParams()[0].get("id");
-    const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+    const codecPreferences = useRef<HTMLSelectElement>(null);
+    const [toggleSidebar, setToggleSidebar] = useState(true);
 
     useEffect(() => {
         if (!roomId) return;
-
-        peerConnectionRef.current = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        const codecs = RTCRtpSender.getCapabilities('video')?.codecs ?? [];
+        codecs.forEach(codec => {
+            if (['video/red', 'video/ulpfec', 'video/rtx'].includes(codec.mimeType)) {
+                return;
+            }
+            const option = document.createElement('option');
+            option.value = (codec.mimeType + ' ' + (codec.sdpFmtpLine || '')).trim();
+            option.innerText = option.value;
+            codecPreferences.current?.appendChild(option);
         });
 
-        peerConnectionRef.current.ontrack = ({ track }) => {
-            if (videoRef.current) {
-                videoRef.current.srcObject = new MediaStream([track]);
-            }
-        };
-
-        const unsubscribeOffer = onSnapshot(doc(db, roomId, "offer"), async snapshot => {
+        const unsubscribeCandidate = onSnapshot(doc(db, roomId, "candidate"), async snapshot => {
             const data = snapshot.data();
             if (data) {
-                await peerConnectionRef.current?.setRemoteDescription(data.offer);
-                const answer = await peerConnectionRef.current?.createAnswer()
-                await peerConnectionRef.current?.setLocalDescription(answer);
-                setDoc(doc(db, roomId, "answer"), { answer });
+                console.log("received candidate");
+                await peerConnection.addIceCandidate(data.candidate);
             }
         });
 
-        const docCandidateRef = doc(db, roomId, "candidate");
-
-        const unsubscribeCandidate = onSnapshot(docCandidateRef, async snapshot => {
+        const unsubscribeAnswere = onSnapshot(doc(db, roomId, "answer"), async snapshot => {
             const data = snapshot.data();
-            if (data?.sender === true) {
-                await peerConnectionRef.current?.addIceCandidate(data.candidate);
+            if (data) {
+                console.log("received answer");
+                await peerConnection.setRemoteDescription(data.answer);
             }
         });
 
-        peerConnectionRef.current.onicecandidate = ({ candidate }) => {
-            if (candidate) {
-                setDoc(docCandidateRef, {
-                    sender: false,
-                    candidate: candidate.toJSON()
-                });
+        const peerConnection = new RTCPeerConnection();
+
+        peerConnection.ontrack = async (e) => {
+            if (videoRef.current) {
+                const videoTrack = e.track;
+                videoTrack.applyConstraints({ frameRate: { min: 60, max: 60 } });
+                videoRef.current.srcObject = new MediaStream([videoTrack]);
             }
         };
 
+        peerConnection.onicecandidate = async ({ candidate }) => {
+            if (candidate) {
+                console.log("sending candidate");
+                await setDoc(doc(db, roomId, "candidate1"), { candidate: candidate.toJSON() });
+            }
+        };
+
+        const createOffer = async () => {
+            const offer = await peerConnection.createOffer({ offerToReceiveVideo: true })
+            await peerConnection.setLocalDescription(offer);
+            console.log("sending offer");
+            await setDoc(doc(db, roomId, "offer"), { offer });
+        };
+
+        createOffer();
+
+        if (!codecPreferences.current) return;
+        codecPreferences.current.onchange = async () => {
+            if (!codecPreferences.current) return;
+            const preferredCodec = codecPreferences.current.options[codecPreferences.current.selectedIndex];
+            if (preferredCodec.value !== '') {
+                const [mimeType, sdpFmtpLine] = preferredCodec.value.split(' ');
+                const selectedCodecIndex = codecs.findIndex(c => c.mimeType === mimeType && c.sdpFmtpLine === sdpFmtpLine);
+                const selectedCodec = codecs[selectedCodecIndex];
+                codecs.splice(selectedCodecIndex, 1);
+                codecs.unshift(selectedCodec);
+
+                peerConnection.getTransceivers().forEach(transceiver => {
+                    transceiver.setCodecPreferences(codecs);
+                });
+                createOffer();
+            }
+        }
+
         return () => {
-            peerConnectionRef.current?.close();
-            peerConnectionRef.current = null;
-            unsubscribeOffer();
+            peerConnection.close();
+            unsubscribeAnswere();
             unsubscribeCandidate();
         };
     }, []);
@@ -62,6 +94,14 @@ export default function Room() {
     return (
         <section className="screenAccessSection">
             <video id="video" playsInline autoPlay ref={videoRef} />
+            <div className={`sidebarContainer ${toggleSidebar && "hide"}`}>
+                <div className="sidebarToggle" onClick={() => setToggleSidebar(prev => !prev)}></div>
+                <div className="sidebar">
+                    <select ref={codecPreferences}>
+                        <option>Choose Codec</option>
+                    </select>
+                </div>
+            </div>
         </section>
     );
 };

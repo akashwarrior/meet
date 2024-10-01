@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Request } from "./components/Requests"
 import { useNavigate } from "react-router-dom";
 import { RecentUsers } from "./components/RecentUsers";
 import { useRecoilState } from "recoil";
-import { userAtom } from "./features/atoms";
-import { db } from "./firebase";
-import { DocumentData, deleteDoc, doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
+import { userAtom } from "./store/atoms";
 import { Header } from "./components/Header";
 import "./App.css";
 
@@ -38,73 +36,17 @@ const linearGradient = (x1: number[], x2: number[], y1: number[], y2: number[], 
   </>
 };
 
+// navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+
 export function App({ user }: { user: { displayName: string, uid: string } }) {
-  const [req, setReq] = useState<DocumentData | null>(null);
-  const [recentUsers, setRecentUsers] = useState<DocumentData[] | null>(null);
-
-  useEffect(() => {
-    getDoc(doc(db, user.uid, "users")).then((doc) => {
-      if (doc.exists()) {
-        const map = doc.data();
-        for (const key in map) {
-          setRecentUsers(prev => {
-            if (prev == null) return [{ displayName: map[key][0], uid: key }];
-            return [...prev, { displayName: map[key][0], uid: key }];
-          });
-        }
-      }
-    });
-
-    return () => {
-      setRecentUsers(null);
-    }
-  }, [])
-
-  useEffect(() => {
-    if (req) return;
-
-    const docRef = doc(db, user.uid, "request");
-    deleteDoc(docRef);
-    const unsubscribe = onSnapshot(docRef, async snapshot => {
-      const data = snapshot.data();
-      if (data && !data.waiting) {
-        unsubscribe();
-        await updateDoc(docRef, { waiting: true });
-        await deleteDoc(doc(db, user.uid, "offer"));
-        await deleteDoc(doc(db, user.uid, "answer"));
-        await deleteDoc(doc(db, user.uid, "candidate"));
-        setReq({
-          displayName: data.displayName,
-          uid: data.uid,
-          status: data.status
-        });
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    }
-  }, [req])
-
-
-  const handleReqReject = () => {
-    setReq(null);
-    updateDoc(doc(db, user.uid, "request"), { status: false });
-  }
-
   const handleCode = () => {
     navigator.clipboard.writeText(user.uid);
   }
 
-
   return (
     <main>
-      {
-        // Handeling sharing request if any and if sharing screen then showing whom to sharing screen with
-        req && (req.status != true ?
-          <Request ownUID={user.uid} name={req.displayName} reqUID={req.uid} rejectReq={handleReqReject} />
-          : <h1>Sharing Screen with {req.displayName}</h1>)
-      }
+      {/* Handeling sharing request if any and if sharing screen then showing whom to sharing screen with */}
+      <Request uid={user.uid} />
 
       <Header displayName={user.displayName} />
 
@@ -114,7 +56,7 @@ export function App({ user }: { user: { displayName: string, uid: string } }) {
       </div>
 
       {/* Previously shared screen with if any */}
-      {recentUsers && <RecentUsers name={user.displayName} uid={user.uid} users={recentUsers} />}
+      {<RecentUsers name={user.displayName} uid={user.uid} />}
 
       {/* Background Animted SVG */}
       <svg className="main_bg" fill="none" height="264" viewBox="0 0 891 264" width="891">

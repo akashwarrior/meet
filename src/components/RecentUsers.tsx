@@ -1,11 +1,29 @@
-import { DocumentData, deleteDoc, doc, onSnapshot, setDoc } from "firebase/firestore";
+import { DocumentData, deleteDoc, doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import '../styles/RecentUsers.css';
 
-export const RecentUsers = ({ users, uid, name }: { users: DocumentData[], uid: string, name: string }) => {
+export const useRecentUsers = (uid: string) => {
+    const [users, setUsers] = useState<DocumentData[]>([]);
+
+    useEffect(() => {
+        getDoc(doc(db, uid, "users")).then((doc) => {
+            if (doc.exists()) {
+                const map = doc.data();
+                for (const key in map) {
+                    setUsers((prev) => [...prev, { uid: key, displayName: map[key] }]);
+                }
+            }
+        });
+    }, []);
+
+    return users;
+}
+
+export const RecentUsers = ({ uid, name }: { uid: string, name: string }) => {
     const navigation = useNavigate();
+    const users = useRecentUsers(uid);
     const [connecting, setConnecting] = useState<boolean>(false);
 
     const handleClick = async (roomId: string) => {
@@ -13,7 +31,7 @@ export const RecentUsers = ({ users, uid, name }: { users: DocumentData[], uid: 
 
         setConnecting(true);
         const docs = doc(db, roomId, "request");
-        await setDoc(docs, { displayName: name, uid: uid, status: null, waiting: false });
+        await setDoc(docs, { displayName: name, uid, status: null, waiting: false });
         const timeout = setTimeout(() => {
             setConnecting(false);
             alert("User is offline.");
@@ -28,7 +46,9 @@ export const RecentUsers = ({ users, uid, name }: { users: DocumentData[], uid: 
             }
             if (status == null) return;
             unsubscribe();
+
             if (status) {
+                deleteDoc(docs);
                 navigation('/room?id=' + roomId);
             } else {
                 setConnecting(false);
@@ -51,8 +71,9 @@ export const RecentUsers = ({ users, uid, name }: { users: DocumentData[], uid: 
     );
 };
 
-export const RecentUsersSkeleton = ({ displayName, handleClick, isConnecting }
-    : { displayName: string, handleClick: any, isConnecting: boolean }) => {
+const RecentUsersSkeleton = ({ displayName, handleClick, isConnecting }
+    : { displayName: string, handleClick: () => void, isConnecting: boolean }) => {
+
     const [connecting, setConnecting] = useState<boolean>(false);
 
     const handleConnect = () => {

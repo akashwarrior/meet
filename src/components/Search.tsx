@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRecoilValue } from "recoil";
-import { userAtom } from "../features/atoms";
+import { userAtom } from "../store/atoms";
 import { DocumentData, deleteDoc, doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import '../styles/Search.css';
