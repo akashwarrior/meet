@@ -1,7 +1,6 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Button } from "./ui/Button";
-import Image from "next/image";
 
 export async function RecentUsers({ uid }: { uid: string }) {
     const users: { uid: string, displayName: string }[] = [];
@@ -27,7 +26,7 @@ export async function RecentUsers({ uid }: { uid: string }) {
                         <div className="absolute top-[40%] left-0 bg-[#3291ff] h-24 w-24 rounded-full"></div>
                         <div className="absolute top-0 right-0 bg-[#79ffe1] h-24 w-24 rounded-full"></div>
                     </div>
-                    <Image className="w-28 h-28 rounded-full mb-3" src={`https://ui-avatars.com/api/?name=${user.displayName}&background=random`} alt={user.displayName} />
+                    <img className="w-28 h-28 rounded-full mb-3" src={`https://ui-avatars.com/api/?name=${user.displayName}&background=random`} alt={user.displayName} />
                     <p className="text-base font-semibold text-white">{user.displayName}</p>
                     <Button
                         className={"bg-[#0070f3] text-white border-none w-full rounded-md h-10 cursor-pointer font-semibold z-30 outline-none mt-5 flex items-center justify-center transition-all duration-200 hover:bg-[#0077ffb1] active:bg-[#4d4dff]"}

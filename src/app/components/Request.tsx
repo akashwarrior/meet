@@ -4,7 +4,6 @@ import { deleteDoc, doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/
 import { useCallback, useEffect, useRef, useState } from "react";
 import { db } from "../lib/firebase";
 import { Timer } from "./Timer";
-import Image from "next/image";
 
 export function Request({ uid }: { uid: string }) {
     const stream = useRef<MediaStream | null>(null);
@@ -136,7 +135,7 @@ export function Request({ uid }: { uid: string }) {
                         <div className="absolute top-0 right-0 bg-[#79ffe1] h-72 w-72 rounded-full blur-[300px]"></div>
                     </div>
                     <div className="flex items-center justify-center w-36 h-36 mb-6">
-                        <Image
+                        <img
                             className="w-full h-full rounded-full"
                             src={`https://ui-avatars.com/api/?name=${req.displayName}&background=random`}
                             alt={req.displayName}
