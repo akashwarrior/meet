@@ -28,7 +28,7 @@
 
 ## 📺 Live Demo
 
-👉 [Try RD Share](https://rd-share.vercel.app/)  
+👉 [Try RD Share]([https://rd-share.vercel.app/](https://rd-share-git-main-akashwarriors-projects.vercel.app)  
 
 ---
 
