@@ -1,7 +1,5 @@
-import type { ReactNode } from "react"
 import Link from "next/link"
 import { CreditCard, LogOut, Monitor, Settings, User } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -14,17 +12,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-interface DashboardShellProps {
-  children: ReactNode
-}
-
-export function DashboardShell({ children }: DashboardShellProps) {
+export async function DashboardShell({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/60 backdrop-blur px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
           <Monitor className="h-6 w-6 text-primary" />
-          <span>ScreenConnect</span>
+          <span>RemoteShare</span>
         </Link>
         <nav className="hidden flex-1 md:flex">
           <ul className="flex gap-6 px-4">
@@ -93,7 +87,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
       <main className="flex-1 space-y-6 p-6 md:p-8 lg:p-10">{children}</main>
       <footer className="border-t py-4 px-6">
         <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
-          <p className="text-center text-sm text-muted-foreground">&copy; 2025 ScreenConnect. All rights reserved.</p>
+          <p className="text-center text-sm text-muted-foreground">&copy; 2025 RemoteShare. No rights reserved.</p>
           <nav className="flex gap-4">
             <Link href="#" className="text-sm text-muted-foreground hover:underline">
               Terms

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import {
   ArrowUpDown,
   Calendar,
@@ -9,12 +8,10 @@ import {
   Download,
   Monitor,
   MoreHorizontal,
-  Plus,
   Search,
   Settings,
   User,
 } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,8 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { Badge } from "@/components/ui/badge"
 
 // Mock data for recent connections
@@ -114,16 +109,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardShell>
-      <DashboardHeader heading="Dashboard" text="Manage your connections and view recent activity.">
-        <Link href="/connect">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Connection
-          </Button>
-        </Link>
-      </DashboardHeader>
-
+    <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-primary/10 hover:border-primary/20 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -340,6 +326,6 @@ export default function DashboardPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </DashboardShell>
+    </>
   )
 }
