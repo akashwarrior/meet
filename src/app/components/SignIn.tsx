@@ -45,7 +45,7 @@ const Signin = () => {
                 <div className="flex flex-col text-center">
                     <h2 className="text-3xl font-semibold tracking-tighter md:text-4xl">
                         Welcome to {' '}
-                        <span className="bg-gradient-to-b from-blue-400 to-blue-700 bg-clip-text pr-1 font-black tracking-tighter text-transparent">
+                        <span className="bg-linear-to-b from-blue-400 to-blue-700 bg-clip-text pr-1 font-black tracking-tighter text-transparent">
                             Remote Share
                         </span>
                     </h2>
@@ -58,7 +58,7 @@ const Signin = () => {
                         <div className="relative flex flex-col gap-2">
                             <label className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70' htmlFor="email">Email</label>
                             <input
-                                className="focus:ring-none border-none bg-white/5 focus:outline-none flex h-10 w-full rounded-md border border-gray-700/50 px-2"
+                                className="focus:ring-none border-none bg-white/5 focus:outline-hidden flex h-10 w-full rounded-md border border-gray-700/50 px-2"
                                 name="email"
                                 id="email"
                                 placeholder="name@email.com"
@@ -83,7 +83,7 @@ const Signin = () => {
                             <label className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>Password</label>
                             <div className="flex">
                                 <input
-                                    className="focus:ring-none border-none bg-white/5 focus:outline-none flex h-10 w-full rounded-md border border-gray-700/50 px-2"
+                                    className="focus:ring-none border-none bg-white/5 focus:outline-hidden flex h-10 w-full rounded-md border border-gray-700/50 px-2"
                                     name="password"
                                     type={isPasswordVisible ? 'text' : 'password'}
                                     id="password"
@@ -151,7 +151,7 @@ const Signin = () => {
                     </div>
                     <div className='flex flex-1 flex-col gap-3 items-center'>
                         <button
-                            className='disabled:opacity-50 h-11 rounded-md px-8 bg-gradient-to-b from-blue-400 to-blue-700 text-white font-medium hover:opacity-80 transition-all duration-300 w-full'
+                            className='disabled:opacity-50 h-11 rounded-md px-8 bg-linear-to-b from-blue-400 to-blue-700 text-white font-medium hover:opacity-80 transition-all duration-300 w-full'
                             disabled={!emailRef.current?.value || !passwordRef.current?.value || checkingPassword}
                             onClick={handleSubmit}
                         >
@@ -166,7 +166,7 @@ const Signin = () => {
                     </div>
                 </div>
             </div>
-            <div className="absolute -bottom-[16rem] -z-20 size-[24rem] overflow-hidden rounded-full bg-gradient-to-t from-blue-400 to-blue-700 blur-[16em]" />
+            <div className="absolute -bottom-[16rem] -z-20 size-[24rem] overflow-hidden rounded-full bg-linear-to-t from-blue-400 to-blue-700 blur-[16em]" />
         </section>
     );
 };

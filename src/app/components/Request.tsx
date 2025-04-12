@@ -129,7 +129,7 @@ export function Request({ uid }: { uid: string }) {
         <section className="absolute w-full flex items-center justify-center h-screen bg-transparent z-50 overflow-hidden">
             <div className="absolute w-full h-full z-10 bg-[#0a0a0a] opacity-80"></div>
             {!req.status ?
-                <div className="z-20 relative w-96 h-fit flex flex-col items-center py-10 bg-black rounded-xl drop-shadow-sm" key={req.uid}>
+                <div className="z-20 relative w-96 h-fit flex flex-col items-center py-10 bg-black rounded-xl drop-shadow-xs" key={req.uid}>
                     <div className="opacity-80 absolute w-full h-full overflow-visible top-0 left-0 z-10 animate-spin-slow">
                         <div className="absolute top-[40%] left-0 bg-[#3291ff] h-72 w-72 rounded-full blur-[300px]"></div>
                         <div className="absolute top-0 right-0 bg-[#79ffe1] h-72 w-72 rounded-full blur-[300px]"></div>

@@ -45,7 +45,7 @@ export default async function Home() {
   return (
     <main className="flex flex-col min-h-screen w-full">
       <Appbar name={user.name || ""} />
-      <div className="mt-16 m-0 bg-gradient-to-b from-[#111] to-[#111] box-content py-7">
+      <div className="mt-16 m-0 bg-linear-to-b from-[#111] to-[#111] box-content py-7">
         <h1 className="text-4xl m-auto w-fit text-white font-bold cursor-pointer active:scale-105"
         //  onClick={() => navigator.clipboard.writeText(user.image ?? "")}
         >
