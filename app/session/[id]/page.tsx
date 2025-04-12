@@ -29,8 +29,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useParams } from "next/navigation"
 
-export default function SessionPage({ params }: { params: { id: string } }) {
+export default function SessionPage() {
   const [isConnected, setIsConnected] = useState(false)
   const [isControlEnabled, setIsControlEnabled] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -39,6 +40,7 @@ export default function SessionPage({ params }: { params: { id: string } }) {
   const [quality, setQuality] = useState(75)
   const [messages, setMessages] = useState<{ sender: string; text: string; time: string }[]>([])
   const [newMessage, setNewMessage] = useState("")
+  const params = useParams();
 
   // Simulate connection process
   useEffect(() => {
@@ -215,9 +217,8 @@ export default function SessionPage({ params }: { params: { id: string } }) {
                             </Avatar>
                           )}
                           <div
-                            className={`max-w-[80%] rounded-lg p-3 ${
-                              message.sender === "You" ? "bg-primary text-primary-foreground" : "bg-muted"
-                            }`}
+                            className={`max-w-[80%] rounded-lg p-3 ${message.sender === "You" ? "bg-primary text-primary-foreground" : "bg-muted"
+                              }`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-xs font-medium">{message.sender}</span>
