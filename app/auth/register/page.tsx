@@ -39,7 +39,7 @@ export default function RegisterPage() {
 
       <Link href="/" className="absolute left-8 top-8 flex items-center gap-2 font-bold text-xl">
         <Monitor className="h-6 w-6 text-primary" />
-        <span>ScreenConnect</span>
+        <span>RemoteShare</span>
       </Link>
 
       <Card className="w-full max-w-md border-primary/10">

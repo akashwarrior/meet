@@ -8,8 +8,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -50,9 +48,7 @@ export default function ConnectPage() {
   }
 
   return (
-    <DashboardShell>
-      <DashboardHeader heading="Connect" text="Start a new screen sharing session or join an existing one." />
-
+    <>
       <Tabs defaultValue="join" className="w-full max-w-3xl mx-auto">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="join">Join Session</TabsTrigger>
@@ -242,6 +238,6 @@ export default function ConnectPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </DashboardShell>
+    </>
   )
 }
