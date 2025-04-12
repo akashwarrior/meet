@@ -101,7 +101,7 @@ export function Room() {
                 </div>
 
                 <div className="w-80 h-full bg-[#1a1a1a] flex flex-col items-center p-5 pt-12 z-10">
-                    <select className="w-full p-2.5 bg-[#1a1a1a] text-white border border-white rounded cursor-pointer" ref={codecPreferences}>
+                    <select className="w-full p-2.5 bg-[#1a1a1a] text-white border border-white rounded-sm cursor-pointer" ref={codecPreferences}>
                         <option className="bg-[#1a1a1a] text-white" >Choose Codec</option>
                     </select>
                 </div>
