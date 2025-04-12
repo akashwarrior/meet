@@ -54,7 +54,7 @@ export function Search({ onHide }: { onHide: () => void }) {
             <div className="bg-[#0a0a0a] w-[640px] rounded-xl flex items-center justify-center z-50 max-w-[80%] border border-gray-800">
                 <input
                     type="number"
-                    className="text-lg text-[#ededed] border-none p-2.5 outline-none flex-1 bg-transparent"
+                    className="text-lg text-[#ededed] border-none p-2.5 outline-hidden flex-1 bg-transparent"
                     ref={searchInpt}
                     onInputCapture={(e) => {
                         e.currentTarget.value = e.currentTarget.value.replace(/[^0-9-+]/g, '');
@@ -66,7 +66,7 @@ export function Search({ onHide }: { onHide: () => void }) {
                     autoFocus
                     {...loading && { disabled: true }}
                 />
-                <button className="h-5 shadow-lg rounded-md bg-[#0a0a0a] px-2 py-3 border border-gray-800 flex items-center justify-center cursor-pointer outline-none text-white mr-3 ml-auto hover:bg-[#1a1a1a]" onClick={onHide}>Esc</button>
+                <button className="h-5 shadow-lg rounded-md bg-[#0a0a0a] px-2 py-3 border border-gray-800 flex items-center justify-center cursor-pointer outline-hidden text-white mr-3 ml-auto hover:bg-[#1a1a1a]" onClick={onHide}>Esc</button>
             </div>
             {loading && <span className="z-50 text-lg" >Loading...</span>}
         </section >
