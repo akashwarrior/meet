@@ -74,12 +74,28 @@ export default function MeetingPage() {
     if (!webRTCService) return;
     setIsConnecting(false);
 
-    webRTCService.getMediaStreams((id, stream) => {
+    webRTCService.getMediaStreams((id, track) => {
       setParticipants(prev => {
         return prev?.map(participant => {
           if (participant.id === id) {
-            participant.video = stream ? stream.getVideoTracks()[0] : stream;
-            participant.audio = stream ? stream.getAudioTracks()[0] : stream;
+            if (track) {
+              switch (track.kind) {
+                case "video":
+                  participant.video = track;
+                  break;
+                case "audio":
+                  participant.audio = track;
+                  break;
+                case "screen":
+                  participant.screen = track;
+                  break;
+                default:
+                  break;
+              }
+            } else {
+              participant.video = null;
+              participant.audio = null;
+            }
           }
           return participant;
         })
@@ -87,13 +103,17 @@ export default function MeetingPage() {
     });
 
     webRTCService.getParticipants((participants) => {
-      console.log("Participants", participants);
       setParticipants(prev => prev ? [...prev, participants] : [participants]);
     });
 
     webRTCService.onParticipantLeave((id) => {
       setParticipants(prev => prev?.filter(participant => participant.id !== id));
     });
+
+    return () => {
+      webRTCService.leave();
+      setParticipants([]);
+    };
   }, [webRTCService]);
 
   useEffect(() => {
@@ -102,15 +122,6 @@ export default function MeetingPage() {
     if (isVideoOn) {
       webRTCService.sendMediaStream();
     } else {
-      setParticipants(prev => {
-        const participant = prev?.find(p => p.id === -1);
-        if (participant) {
-          participant.video = null;
-          participant.audio = null;
-          return [...prev];
-        }
-        return prev;
-      });
       webRTCService.stopMediaStream();
     }
   }, [isVideoOn, webRTCService]);
@@ -289,10 +300,12 @@ export default function MeetingPage() {
                         autoPlay
                         playsInline
                         muted
+                        controls
                         ref={(video) => {
                           if (video && participant.video) {
                             const stream = new MediaStream();
                             stream.addTrack(participant.video!);
+                            participant.id !== -1 && participant.audio && stream.addTrack(participant.audio!);
                             video.srcObject = stream;
                           }
                         }}
