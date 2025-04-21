@@ -17,16 +17,14 @@ import {
   LucideInfo,
   LucideX,
   LucideSend,
-  LucidePresentation,
-  LucideLayout,
   LucideMaximize,
   LucideUserPlus,
   LucideCopy,
   LucideShield,
-  LucidePin,
-  LucidePinOff,
   LucideMoreHorizontal,
   LucideLogOut,
+  LucideChevronLeft,
+  LucideChevronRight,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -51,8 +49,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { toast } from "sonner"
-import { useMobile } from "@/hooks/use-mobile"
 import { Participant } from "@/components/participant"
+import { SelectLabel } from "@radix-ui/react-select"
+import { LiveClock } from "@/components/liveClock"
 
 // Participant type definition
 interface Participant {
@@ -80,7 +79,7 @@ interface WaitingParticipant {
 }
 
 // Mock data for demonstration
-const mockParticipants: Participant[] = [
+const mockParticipants = [
   {
     id: "1",
     name: "Alice Johnson",
@@ -97,84 +96,129 @@ const mockParticipants: Participant[] = [
   },
   {
     id: "3",
-    name: "Charlie Davis",
+    name: "Charlie Brown",
     isMuted: false,
     isVideoOff: true,
     stream: null,
   },
   {
     id: "4",
-    name: "Diana Miller",
-    isMuted: true,
-    isVideoOff: true,
+    name: "Diana Prince",
+    isMuted: false,
+    isVideoOff: false,
     stream: null,
   },
   {
     id: "5",
-    name: "Ethan Brown",
-    isMuted: false,
-    isVideoOff: false,
+    name: "Ethan Hunt",
+    isMuted: true,
+    isVideoOff: true,
     stream: null,
   },
   {
     id: "6",
-    name: "Fiona Wilson",
+    name: "Felicity Smoak",
     isMuted: true,
-    isVideoOff: false,
+    isVideoOff: true,
     stream: null,
   },
   {
     id: "7",
-    name: "George Taylor",
-    isMuted: false,
-    isVideoOff: true,
-    stream: null,
-  },
-  {
-    id: "8",
-    name: "Hannah Anderson",
-    isMuted: true,
-    isVideoOff: true,
-    stream: null,
-  },
-  {
-    id: "9",
-    name: "Ian Thomas",
+    name: "Gordon Freeman",
     isMuted: false,
     isVideoOff: false,
     stream: null,
   },
   {
+    id: "8",
+    name: "Hannah Montana",
+    isMuted: true,
+    isVideoOff: false,
+    stream: null,
+  },
+  {
+    id: "9",
+    name: "Ivy League",
+    isMuted: false,
+    isVideoOff: true,
+    stream: null,
+  },
+  {
     id: "10",
-    name: "Julia Martinez",
+    name: "Jack Sparrow",
     isMuted: true,
     isVideoOff: false,
     stream: null,
   },
   {
     id: "11",
-    name: "Kevin Garcia",
+    name: "Katherine Johnson",
     isMuted: false,
     isVideoOff: true,
     stream: null,
   },
   {
     id: "12",
-    name: "Laura Rodriguez",
+    name: "Leonardo DiCaprio",
     isMuted: true,
+    isVideoOff: false,
+    stream: null,
+  },
+  {
+    id: "13",
+    name: "Mia Wallace",
+    isMuted: false,
     isVideoOff: true,
     stream: null,
-  }
-]
-
-// Initial messages
-const initialMessages: Message[] = [
+  },
   {
-    id: "1",
-    sender: "System",
-    content: "Welcome to the meeting! Remember to keep your microphone muted when not speaking.",
-    time: "10:00 AM",
-    isSystem: true,
+    id: "14",
+    name: "Nathan Drake",
+    isMuted: true,
+    isVideoOff: false,
+    stream: null,
+  },
+  {
+    id: "15",
+    name: "Olivia Pope",
+    isMuted: false,
+    isVideoOff: true,
+    stream: null,
+  },
+  {
+    id: "16",
+    name: "Peter Parker",
+    isMuted: true,
+    isVideoOff: false,
+    stream: null,
+  },
+  {
+    id: "17",
+    name: "Quinn Fabray",
+    isMuted: false,
+    isVideoOff: true,
+    stream: null,
+  },
+  {
+    id: "18",
+    name: "Rick Grimes",
+    isMuted: true,
+    isVideoOff: false,
+    stream: null,
+  },
+  {
+    id: "19",
+    name: "Steve Rogers",
+    isMuted: false,
+    isVideoOff: true,
+    stream: null,
+  },
+  {
+    id: "20",
+    name: "Tony Stark",
+    isMuted: true,
+    isVideoOff: false,
+    stream: null,
   },
 ]
 
@@ -182,159 +226,38 @@ export default function MeetingRoom() {
   const { id } = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const userName = searchParams.get("name") || localStorage?.getItem("userName") || "You"
-  const isMobile = useMobile()
+  const userName = searchParams.get("name") || "You"
 
   // Refs
-  const videoRef = useRef<HTMLVideoElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // UI state
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("participants")
   const [message, setMessage] = useState("")
-  const [layout, setLayout] = useState("grid") // grid, spotlight, sidebar
   const [showSettings, setShowSettings] = useState(false)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
 
   // Meeting state
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null)
   const [participants, setParticipants] = useState<Participant[]>(mockParticipants)
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
-  const [isMuted, setIsMuted] = useState(localStorage?.getItem("isMicOn") === "false")
-  const [isVideoOff, setIsVideoOff] = useState(localStorage?.getItem("isCameraOn") === "false")
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isMuted, setIsMuted] = useState(true)
+  const [isVideoOff, setIsVideoOff] = useState(true)
   const [isScreenSharing, setIsScreenSharing] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
-  const [pinnedParticipant, setPinnedParticipant] = useState<string | null>(null)
 
   // Device settings
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
-  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>("")
-  const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>("")
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>("mic")
+  const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>("camera")
 
   const [waitingParticipants, setWaitingParticipants] = useState<WaitingParticipant[]>([])
   const [showWaitingRoom, setShowWaitingRoom] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const participantsPerPage = false ? 6 : 9
+  const totalPages = Math.ceil((participants.length + 1) / participantsPerPage)
 
-  // Initialize media stream
-  useEffect(() => {
-    const initializeMedia = async () => {
-      try {
-        // Get available media devices
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const audioInputs = devices.filter((device) => device.kind === "audioinput")
-        const videoInputs = devices.filter((device) => device.kind === "videoinput")
-
-        setAudioDevices(audioInputs)
-        setVideoDevices(videoInputs)
-
-        // Set default devices
-        if (audioInputs.length > 0) setSelectedAudioDevice(audioInputs[0].deviceId)
-        if (videoInputs.length > 0) setSelectedVideoDevice(videoInputs[0].deviceId)
-
-        // Get media stream
-        // const stream = await navigator.mediaDevices.getUserMedia({
-        //   video: true,
-        //   audio: true,
-        // })
-
-        const stream = new MediaStream();
-        // Apply saved settings
-        const audioTracks = stream.getAudioTracks()
-        audioTracks.forEach((track) => {
-          track.enabled = !isMuted
-        })
-
-        const videoTracks = stream.getVideoTracks()
-        videoTracks.forEach((track) => {
-          track.enabled = !isVideoOff
-        })
-
-        setLocalStream(stream)
-
-        // Set video element source
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-        }
-
-        // Add system message about joining
-        addSystemMessage(`${userName} joined the meeting`)
-      } catch (error) {
-        console.error("Error accessing media devices:", error)
-        toast.error("Media Error", {
-          description: "Could not access camera or microphone. Please check your device permissions.",
-        })
-        setIsVideoOff(true)
-        setIsMuted(true)
-      }
-    }
-
-    initializeMedia()
-
-    // Cleanup function
-    return () => {
-      if (localStream) {
-        localStream.getTracks().forEach((track) => {
-          track.stop()
-        })
-      }
-
-      // Remove any screen share overlay if it exists
-      const overlay = document.getElementById("screen-share-overlay")
-      if (overlay) {
-        overlay.remove()
-      }
-    }
-  }, [])
-
-  // Update stream when device selections change
-  useEffect(() => {
-    const updateMediaStream = async () => {
-      if (!selectedAudioDevice && !selectedVideoDevice) return
-
-      try {
-        // Stop existing tracks
-        if (localStream) {
-          localStream.getTracks().forEach((track) => track.stop())
-        }
-
-        // Get new stream with selected devices
-        const constraints: MediaStreamConstraints = {
-          audio: selectedAudioDevice ? { deviceId: { exact: selectedAudioDevice } } : true,
-          video: selectedVideoDevice ? { deviceId: { exact: selectedVideoDevice } } : true,
-        }
-
-        // const newStream = await navigator.mediaDevices.getUserMedia(constraints)
-
-        const newStream = new MediaStream();
-
-        // Apply current settings to new stream
-        const audioTracks = newStream.getAudioTracks()
-        audioTracks.forEach((track) => {
-          track.enabled = !isMuted
-        })
-
-        const videoTracks = newStream.getVideoTracks()
-        videoTracks.forEach((track) => {
-          track.enabled = !isVideoOff
-        })
-
-        setLocalStream(newStream)
-
-        // Update video element
-        if (videoRef.current) {
-          videoRef.current.srcObject = newStream
-        }
-      } catch (error) {
-        console.error("Error updating media devices:", error)
-        toast.error("Device Error", {
-          description: "Could not access selected devices. Please try different ones.",
-        })
-      }
-    }
-
-    updateMediaStream()
-  }, [selectedAudioDevice, selectedVideoDevice])
 
   // Scroll chat to bottom when new messages arrive
   useEffect(() => {
@@ -342,18 +265,6 @@ export default function MeetingRoom() {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
   }, [messages])
-
-  // Handle window resize for responsive layout
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768 && sidebarOpen) {
-        setSidebarOpen(false)
-      }
-    }
-
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [sidebarOpen])
 
   // Add system message
   const addSystemMessage = (content: string) => {
@@ -365,265 +276,6 @@ export default function MeetingRoom() {
       isSystem: true,
     }
     setMessages((prev) => [...prev, newMessage])
-  }
-
-  // Toggle mute
-  const toggleMute = () => {
-    if (localStream) {
-      const audioTracks = localStream.getAudioTracks()
-      audioTracks.forEach((track) => {
-        track.enabled = isMuted
-      })
-      setIsMuted(!isMuted)
-
-      // Update localStorage
-      localStorage?.setItem("isMicOn", isMuted.toString())
-
-      // Add system message
-      addSystemMessage(`${userName} ${isMuted ? "unmuted" : "muted"} their microphone`)
-
-      toast.info(isMuted ? "Microphone unmuted" : "Microphone muted", {
-        duration: 2000,
-      })
-    }
-  }
-
-  // Toggle video
-  const toggleVideo = () => {
-    if (localStream) {
-      const videoTracks = localStream.getVideoTracks()
-      videoTracks.forEach((track) => {
-        track.enabled = isVideoOff
-      })
-      setIsVideoOff(!isVideoOff)
-
-      // Update localStorage
-      localStorage?.setItem("isCameraOn", isVideoOff.toString())
-
-      // Add system message
-      addSystemMessage(`${userName} turned ${isVideoOff ? "on" : "off"} their camera`)
-
-      toast.info(isVideoOff ? "Camera turned on" : "Camera turned off", {
-        duration: 2000,
-      })
-    }
-  }
-
-  // Toggle screen sharing
-  const toggleScreenShare = async () => {
-    if (isScreenSharing) {
-      // Stop screen sharing
-      setIsScreenSharing(false)
-
-      // Remove any screen share overlay if it exists
-      const overlay = document.getElementById("screen-share-overlay")
-      if (overlay) {
-        overlay.remove()
-      }
-
-      // Revert to camera
-      try {
-        if (localStream) {
-          // Stop all current tracks
-          localStream.getTracks().forEach((track) => track.stop())
-        }
-
-        // Get camera stream again
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: selectedVideoDevice ? { deviceId: { exact: selectedVideoDevice } } : true,
-          audio: selectedAudioDevice ? { deviceId: { exact: selectedAudioDevice } } : true,
-        })
-
-        // Apply current settings
-        const audioTracks = newStream.getAudioTracks()
-        audioTracks.forEach((track) => {
-          track.enabled = !isMuted
-        })
-
-        const videoTracks = newStream.getVideoTracks()
-        videoTracks.forEach((track) => {
-          track.enabled = !isVideoOff
-        })
-
-        setLocalStream(newStream)
-
-        // Update video element
-        if (videoRef.current) {
-          videoRef.current.srcObject = newStream
-        }
-
-        // Add system message
-        addSystemMessage(`${userName} stopped sharing their screen`)
-      } catch (error) {
-        console.error("Error reverting to camera:", error)
-        toast.error("Error", {
-          description: "Could not revert to camera",
-        })
-      }
-
-      toast.info("Screen sharing stopped", {
-        duration: 2000,
-      })
-    } else {
-      try {
-        // Try to get screen sharing - this might fail in preview mode
-        let screenStream: MediaStream | null = null
-
-        try {
-          screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-          })
-        } catch (error) {
-          // This is expected to fail in preview mode or iframes
-          console.log("Screen sharing not available in this environment, using simulation mode")
-          // We'll continue with the simulation approach
-        }
-
-        if (screenStream) {
-          // Real screen sharing is available
-          // If we have an existing stream, we need to replace the video track
-          if (localStream) {
-            // Keep audio tracks from the original stream
-            const audioTracks = localStream.getAudioTracks()
-
-            // Create a new stream with screen video and original audio
-            const newStream = new MediaStream()
-
-            screenStream.getVideoTracks().forEach((track) => {
-              newStream.addTrack(track)
-
-              // Listen for the end of screen sharing
-              track.onended = async () => {
-                await toggleScreenShare()
-              }
-            })
-
-            audioTracks.forEach((track) => {
-              newStream.addTrack(track)
-            })
-
-            // Stop old tracks
-            localStream.getVideoTracks().forEach((track) => track.stop())
-
-            setLocalStream(newStream)
-
-            // Update video element
-            if (videoRef.current) {
-              videoRef.current.srcObject = newStream
-            }
-          } else {
-            setLocalStream(screenStream)
-          }
-
-          setIsScreenSharing(true)
-
-          // Add system message
-          addSystemMessage(`${userName} started sharing their screen`)
-
-          toast.info("Screen sharing started", {
-            description: "Your screen is now visible to all participants",
-            duration: 2000,
-          })
-        } else {
-          // Simulation mode - no real screen sharing
-          setIsScreenSharing(true)
-
-          // If we have a video element, we'll modify its appearance to simulate screen sharing
-          if (videoRef.current && !isVideoOff) {
-            // We'll add a visual indicator that this is simulated screen sharing
-            // by adding a semi-transparent overlay with text
-            const videoContainer = videoRef.current.parentElement
-            if (videoContainer) {
-              const overlay = document.createElement("div")
-              overlay.className = "absolute inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center z-10"
-              overlay.id = "screen-share-overlay"
-
-              const text = document.createElement("div")
-              text.className = "bg-black bg-opacity-70 text-white px-3 py-2 rounded text-sm"
-              text.textContent = "Screen sharing (simulated)"
-
-              overlay.appendChild(text)
-              videoContainer.appendChild(overlay)
-            }
-          }
-
-          // Add system message
-          addSystemMessage(`${userName} started sharing their screen (simulated)`)
-
-          toast.info("Screen sharing simulated", {
-            description: "Real screen sharing is not available in preview mode. This is a simulation.",
-            duration: 3000,
-          })
-        }
-      } catch (error) {
-        // This should rarely happen now since we're catching errors earlier
-        console.error("Unexpected error in screen sharing:", error)
-
-        // Fall back to simulation mode
-        setIsScreenSharing(true)
-
-        // Add visual indicator for simulation
-        if (videoRef.current && !isVideoOff) {
-          const videoContainer = videoRef.current.parentElement
-          if (videoContainer) {
-            const overlay = document.createElement("div")
-            overlay.className = "absolute inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center z-10"
-            overlay.id = "screen-share-overlay"
-
-            const text = document.createElement("div")
-            text.className = "bg-black bg-opacity-70 text-white px-3 py-2 rounded text-sm"
-            text.textContent = "Screen sharing (simulated)"
-
-            overlay.appendChild(text)
-            videoContainer.appendChild(overlay)
-          }
-        }
-
-        // Add system message
-        addSystemMessage(`${userName} started sharing their screen (simulated)`)
-
-        toast.info("Screen sharing simulated", {
-          description: "Real screen sharing is not available. This is a simulation.",
-          duration: 3000,
-        })
-      }
-    }
-  }
-
-  // Toggle recording
-  const toggleRecording = () => {
-    setIsRecording(!isRecording)
-
-    // Add system message
-    addSystemMessage(`${userName} ${isRecording ? "stopped" : "started"} recording the meeting`)
-
-    toast.info(isRecording ? "Recording stopped" : "Recording started", {
-      duration: 2000,
-    })
-  }
-
-  // Pin/unpin participant
-  const togglePinParticipant = (participantId: string) => {
-    if (pinnedParticipant === participantId) {
-      setPinnedParticipant(null)
-      toast.info("Participant unpinned", {
-        duration: 2000,
-      })
-    } else {
-      setPinnedParticipant(participantId)
-
-      // Get participant name
-      let name = "You"
-      if (participantId !== "local") {
-        const participant = participants.find((p) => p.id === participantId)
-        if (participant) name = participant.name
-      }
-
-      toast.info(`${name} pinned`, {
-        description: "This participant will be shown prominently",
-        duration: 2000,
-      })
-    }
   }
 
   // Send a chat message
@@ -665,27 +317,12 @@ export default function MeetingRoom() {
 
   // Copy meeting link
   const copyMeetingLink = () => {
-    const link = `${window.location.origin}/meeting/${id}?name=Guest`
-    navigator.clipboard.writeText(link)
+    // const link = `${window.location.origin}/meeting/${id}?name=Guest`
+    // navigator.clipboard.writeText(link)
     toast.success("Meeting link copied", {
       description: "Share this link with others to invite them",
       duration: 2000,
     })
-  }
-
-  // Mute/unmute a participant (in a real app, this would be implemented with WebRTC)
-  const toggleParticipantMute = (participantId: string) => {
-    setParticipants((prev) => prev.map((p) => (p.id === participantId ? { ...p, isMuted: !p.isMuted } : p)))
-
-    // Get participant name
-    const participant = participants.find((p) => p.id === participantId)
-    if (participant) {
-      addSystemMessage(`${participant.name} was ${participant.isMuted ? "unmuted" : "muted"} by ${userName}`)
-
-      toast.info(`${participant.name} ${participant.isMuted ? "unmuted" : "muted"}`, {
-        duration: 2000,
-      })
-    }
   }
 
   // Remove a participant from the meeting
@@ -749,77 +386,47 @@ export default function MeetingRoom() {
     }
   }
 
+  // Pagination controls
+  const nextPage = () => {
+    setCurrentPage(currentPage + 1)
+  }
+
+  const prevPage = () => {
+    setCurrentPage(currentPage - 1)
+  }
+
+  const getGridClass = () => {
+    const pageParticipants = getCurrentPageParticipants()
+    const count = pageParticipants.length
+
+    if (false) {
+      if (count === 1) return "grid-cols-1"
+      if (count === 2) return "grid-cols-1 grid-rows-2"
+      if (count === 3) return "grid-cols-2 grid-rows-2 [&>*:nth-child(3)]:col-span-2"
+      if (count === 4) return "grid-cols-2 grid-rows-2"
+      return "grid-cols-2 grid-rows-3"
+    } else {
+      if (count === 1) return "grid-cols-1"
+      if (count === 2) return "grid-cols-2"
+      if (count === 3) return "grid-cols-2 grid-rows-2"
+      if (count === 4) return "grid-cols-2 grid-rows-2"
+      if (count <= 6) return "grid-col-2 grid-cols-3 grid-rows-2"
+      return "grid-cols-3 grid-rows-3"
+    }
+  }
+
+  // Get participants for current page
+  const getCurrentPageParticipants = () => {
+    const start = currentPage * participantsPerPage
+    const end = start + participantsPerPage
+
+    return participants.slice(start, end)
+  }
+
   // Leave the meeting
   const leaveCall = () => {
-    if (localStream) {
-      localStream.getTracks().forEach((track) => {
-        track.stop()
-      })
-    }
-
     router.push("/")
   }
-
-  // Calculate grid layout based on number of participants and pinned state
-  const getGridClass = () => {
-    const totalParticipants = participants.length + 1 // +1 for local user
-
-    if (layout === "spotlight" || pinnedParticipant) {
-      return "grid-cols-1"
-    }
-
-    if (totalParticipants <= 1) return "grid-cols-1"
-    if (totalParticipants <= 2) return "grid-cols-1 md:grid-cols-2"
-    if (totalParticipants <= 4) return "grid-cols-1 md:grid-cols-2"
-    if (totalParticipants <= 9) return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
-    return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-  }
-
-  // Simulate a join request (for demonstration)
-  const simulateJoinRequest = () => {
-    const names = ["Michael Johnson", "Emma Williams", "James Brown", "Olivia Jones", "William Davis"]
-    const randomName = names[Math.floor(Math.random() * names.length)]
-
-    const newWaitingParticipant: WaitingParticipant = {
-      id: `waiting-${Date.now()}`,
-      name: randomName,
-      joinTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    }
-
-    setWaitingParticipants((prev) => [...prev, newWaitingParticipant])
-
-    // Show notification
-    toast.info("Join request", {
-      description: `${randomName} is requesting to join the meeting`,
-      duration: 4000,
-    })
-
-    // If waiting room isn't open, show the badge
-    if (!showWaitingRoom) {
-      // We'll add a visual indicator in the UI
-    }
-  }
-
-  // Simulate occasional join requests (for demonstration)
-  useEffect(() => {
-    // Only add this in a real implementation if you want to demo the feature
-    const interval = setInterval(() => {
-      // 10% chance of a join request every 30 seconds
-      if (Math.random() < 0.1) {
-        simulateJoinRequest()
-      }
-    }, 30000)
-
-    // Simulate one join request after 5 seconds
-    const timeout = setTimeout(() => {
-      simulateJoinRequest()
-    }, 5000)
-
-    return () => {
-      clearInterval(interval)
-      clearTimeout(timeout)
-    }
-  }, [])
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -859,7 +466,7 @@ export default function MeetingRoom() {
                 <DialogDescription>Share this meeting link with others you want to invite</DialogDescription>
               </DialogHeader>
               <div className="flex items-center space-x-2 mt-4">
-                <Input value={`${window.location.origin}/meeting/${id}?name=Guest`} readOnly className="flex-1" />
+                {/* <Input value={`${window.location.origin}/meeting/${id}?name=Guest`} readOnly className="flex-1" /> */}
                 <Button onClick={copyMeetingLink} size="icon">
                   <LucideCopy className="h-4 w-4" />
                 </Button>
@@ -889,7 +496,7 @@ export default function MeetingRoom() {
               </div>
               <div className="px-2 py-1.5">
                 <div className="text-xs text-muted-foreground">Joining info</div>
-                <div className="text-sm">{`${window.location.origin}/meeting/${id}?name=Guest`}</div>
+                {/* <div className="text-sm">{`${window.location.origin}/meeting/${id}?name=Guest`}</div> */}
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={copyMeetingLink}>
@@ -901,85 +508,49 @@ export default function MeetingRoom() {
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden">
-        <div className={"flex-1 p-2 md:p-4"}>
-          {/* Video grid layout */}
-          <div className={cn("grid gap-2 md:gap-4 h-full", getGridClass(), pinnedParticipant && "grid-rows-[3fr_1fr]")}>
-            {/* If there's a pinned participant, show them first */}
-            {pinnedParticipant && (
-              <div className="col-span-full row-span-1 md:row-span-1 relative bg-black rounded-lg overflow-hidden shadow-md">
-                {pinnedParticipant === "local" ? (
-                  // Local user is pinned
-                  <>
-                    {!isVideoOff ? (
-                      <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-800 dark:bg-gray-900">
-                        <Avatar className="h-24 w-24">
-                          <AvatarFallback className="text-3xl bg-blue-500">{userName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      </div>
-                    )}
-                    <div className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-sm">
-                      {userName} {isMuted && "(Muted)"}
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => togglePinParticipant("local")}
-                      className="absolute top-2 right-2 bg-black bg-opacity-60 text-white hover:bg-opacity-70"
-                    >
-                      <LucidePinOff className="h-4 w-4" />
-                    </Button>
-                  </>
-                ) : (
-                  // A participant is pinned
-                  <Participant
-                    participant={participants.find((p) => p.id === pinnedParticipant)!}
-                    isPinned={true}
-                    onPin={() => togglePinParticipant(pinnedParticipant)}
-                    onMute={() => toggleParticipantMute(pinnedParticipant)}
-                    onRemove={() => removeParticipant(pinnedParticipant)}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Local video (if not pinned or in grid view) */}
-            {(!pinnedParticipant || pinnedParticipant !== "local") && (
-              <div className="relative bg-black rounded-lg overflow-hidden shadow-md">
-                {!isVideoOff ? (
-                  <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-800 dark:bg-gray-900">
-                    <Avatar className="h-16 w-16">
-                      <AvatarFallback className="text-xl md:text-3xl bg-blue-500">{userName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                )}
-                <div className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-sm">
-                  {userName} {isMuted && "(Muted)"}
-                </div>
-              </div>
-            )}
-
-            {/* Remote participants (if not pinned or in grid view) */}
-            {participants.map(
-              (participant) =>
-                (!pinnedParticipant || pinnedParticipant !== participant.id) && (
-                  <Participant
-                    key={participant.id}
-                    participant={participant}
-                    isPinned={false}
-                    onPin={() => togglePinParticipant(participant.id)}
-                    onMute={() => toggleParticipantMute(participant.id)}
-                    onRemove={() => removeParticipant(participant.id)}
-                  />
-                ),
-            )}
-          </div>
+      <main className="flex-1 flex flex-grow overflow-hidden">
+        {/* Video grid layout */}
+        <div className={cn("h-full w-full p-2 grid gap-2", getGridClass())}>
+          {getCurrentPageParticipants().slice(0, 9).map(
+            (participant) =>
+              <Participant
+                key={participant.id}
+                participant={participant}
+                onRemove={() => removeParticipant(participant.id)}
+              />
+          )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="absolute bottom-20 left-0 w-full flex justify-center items-center space-x-2">
+            <Button
+              size="icon"
+              className="rounded-full bg-primary text-white"
+              onClick={prevPage}
+              disabled={currentPage === 0}
+            >
+              <LucideChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <div className="flex space-x-1">
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <div
+                  key={index}
+                  className={cn("h-2 w-2 rounded-full shadow border", currentPage === index ? "bg-primary" : "bg-gray-400")}
+                />
+              ))}
+            </div>
+
+            <Button
+              size="icon"
+              className="rounded-full bg-primary text-white"
+              onClick={nextPage}
+              disabled={currentPage === totalPages - 1}
+            >
+              <LucideChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         {/* Sidebar */}
         <div className={cn("bg-background overflow-hidden border max-w-full w-sm flex flex-col transition-all duration-300 rounded-lg",
@@ -1005,19 +576,6 @@ export default function MeetingRoom() {
             <TabsContent value="participants" className="flex-1 p-0 m-0 overflow-hidden">
               <h3 className="text-sm font-medium text-muted-foreground my-2 mx-4">Participants</h3>
               <ScrollArea className="h-full px-6">
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex items-center">
-                    <Avatar className="h-8 w-8 mr-3">
-                      <AvatarFallback className="bg-blue-500">{userName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span>{userName}</span>
-                  </div>
-                  <div className="flex items-center text-muted-foreground">
-                    {isMuted ? <LucideMicOff size="18" /> : <LucideMic size="18" />}
-                    {isVideoOff ? <LucideVideoOff size="18" /> : <LucideVideo size="18" />}
-                  </div>
-                </div>
-
                 {participants.map((participant) => (
                   <div key={participant.id} className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-4">
@@ -1046,11 +604,8 @@ export default function MeetingRoom() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => toggleParticipantMute(participant.id)}>
+                          <DropdownMenuItem>
                             {participant.isMuted ? "Unmute" : "Mute"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => togglePinParticipant(participant.id)}>
-                            {pinnedParticipant === participant.id ? "Unpin" : "Pin"}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -1107,11 +662,11 @@ export default function MeetingRoom() {
       <footer className="bg-background border-t border-border py-3 px-4 md:py-4 md:px-6">
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground hidden md:block">
-            {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            <LiveClock />
+            {/* {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} */}
           </div>
           <div className="flex items-center space-x-1 md:space-x-2 mx-auto md:mx-0">
             <Button
-              onClick={toggleMute}
               variant={isMuted ? "destructive" : "secondary"}
               size="icon"
               className="rounded-full h-10 w-10 md:h-12 md:w-12"
@@ -1119,7 +674,6 @@ export default function MeetingRoom() {
               {isMuted ? <LucideMicOff className="h-5 w-5" /> : <LucideMic className="h-5 w-5" />}
             </Button>
             <Button
-              onClick={toggleVideo}
               variant={isVideoOff ? "destructive" : "secondary"}
               size="icon"
               className="rounded-full h-10 w-10 md:h-12 md:w-12"
@@ -1127,7 +681,6 @@ export default function MeetingRoom() {
               {isVideoOff ? <LucideVideoOff className="h-5 w-5" /> : <LucideVideo className="h-5 w-5" />}
             </Button>
             <Button
-              onClick={toggleScreenShare}
               variant={isScreenSharing ? "destructive" : "secondary"}
               size="icon"
               className="rounded-full h-10 w-10 md:h-12 md:w-12"
@@ -1142,19 +695,11 @@ export default function MeetingRoom() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={toggleRecording}>
+                <DropdownMenuItem>
                   {isRecording ? "Stop recording" : "Start recording"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowSettings(true)}>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setLayout("grid")}>
-                  <LucideLayout className="h-4 w-4 mr-2" />
-                  Grid view
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLayout("spotlight")}>
-                  <LucidePresentation className="h-4 w-4 mr-2" />
-                  Spotlight view
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => document.documentElement.requestFullscreen()}>
                   <LucideMaximize className="h-4 w-4 mr-2" />
@@ -1211,6 +756,7 @@ export default function MeetingRoom() {
                     <SelectValue placeholder="Select microphone" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectLabel>Microphones</SelectLabel>
                     {audioDevices.map((device) => (
                       <SelectItem key={device.deviceId} value={device.deviceId}>
                         {device.label || `Microphone ${audioDevices.indexOf(device) + 1}`}
@@ -1221,7 +767,7 @@ export default function MeetingRoom() {
               </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-sm">Mute/Unmute</span>
-                <Button variant="outline" size="sm" onClick={toggleMute}>
+                <Button variant="outline" size="sm">
                   {isMuted ? "Unmute" : "Mute"}
                 </Button>
               </div>
@@ -1235,6 +781,7 @@ export default function MeetingRoom() {
                     <SelectValue placeholder="Select camera" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectLabel>Cameras</SelectLabel>
                     {videoDevices.map((device) => (
                       <SelectItem key={device.deviceId} value={device.deviceId}>
                         {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
@@ -1245,27 +792,13 @@ export default function MeetingRoom() {
               </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-sm">Camera</span>
-                <Button variant="outline" size="sm" onClick={toggleVideo}>
+                <Button variant="outline" size="sm">
                   {isVideoOff ? "Turn on" : "Turn off"}
                 </Button>
               </div>
             </div>
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Layout</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant={layout === "grid" ? "default" : "outline"} size="sm" onClick={() => setLayout("grid")}>
-                  <LucideLayout className="h-4 w-4 mr-2" />
-                  Grid
-                </Button>
-                <Button
-                  variant={layout === "spotlight" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setLayout("spotlight")}
-                >
-                  <LucidePresentation className="h-4 w-4 mr-2" />
-                  Spotlight
-                </Button>
-              </div>
             </div>
           </div>
         </DialogContent>

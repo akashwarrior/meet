@@ -44,7 +44,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --animate-ripple: ripple 600ms forwards ease-out;
+  --animate-ripple: ripple 500ms forwards ease-out;
 
   @keyframes ripple {
     to {
@@ -121,7 +121,7 @@
 }
 
 .dark {
-  --background: oklch(0.13 0.028 261.692);
+  --background: #181818;
   --foreground: oklch(0.985 0.002 247.839);
   --card: oklch(0.21 0.034 264.665);
   --card-foreground: oklch(0.985 0.002 247.839);
