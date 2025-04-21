@@ -52,6 +52,7 @@ import { toast } from "sonner"
 import { Participant } from "@/components/participant"
 import { SelectLabel } from "@radix-ui/react-select"
 import { LiveClock } from "@/components/liveClock"
+import { useMobile } from "@/hooks/use-mobile"
 
 // Participant type definition
 interface Participant {
@@ -164,65 +165,10 @@ const mockParticipants = [
     isVideoOff: false,
     stream: null,
   },
-  {
-    id: "13",
-    name: "Mia Wallace",
-    isMuted: false,
-    isVideoOff: true,
-    stream: null,
-  },
-  {
-    id: "14",
-    name: "Nathan Drake",
-    isMuted: true,
-    isVideoOff: false,
-    stream: null,
-  },
-  {
-    id: "15",
-    name: "Olivia Pope",
-    isMuted: false,
-    isVideoOff: true,
-    stream: null,
-  },
-  {
-    id: "16",
-    name: "Peter Parker",
-    isMuted: true,
-    isVideoOff: false,
-    stream: null,
-  },
-  {
-    id: "17",
-    name: "Quinn Fabray",
-    isMuted: false,
-    isVideoOff: true,
-    stream: null,
-  },
-  {
-    id: "18",
-    name: "Rick Grimes",
-    isMuted: true,
-    isVideoOff: false,
-    stream: null,
-  },
-  {
-    id: "19",
-    name: "Steve Rogers",
-    isMuted: false,
-    isVideoOff: true,
-    stream: null,
-  },
-  {
-    id: "20",
-    name: "Tony Stark",
-    isMuted: true,
-    isVideoOff: false,
-    stream: null,
-  },
 ]
 
 export default function MeetingRoom() {
+  const mobile = useMobile();
   const { id } = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -255,8 +201,8 @@ export default function MeetingRoom() {
   const [waitingParticipants, setWaitingParticipants] = useState<WaitingParticipant[]>([])
   const [showWaitingRoom, setShowWaitingRoom] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
-  const participantsPerPage = false ? 6 : 9
-  const totalPages = Math.ceil((participants.length + 1) / participantsPerPage)
+  const participantsPerPage = mobile ? 6 : 9
+  const totalPages = Math.ceil(participants.length / participantsPerPage)
 
 
   // Scroll chat to bottom when new messages arrive
@@ -399,7 +345,7 @@ export default function MeetingRoom() {
     const pageParticipants = getCurrentPageParticipants()
     const count = pageParticipants.length
 
-    if (false) {
+    if (mobile) {
       if (count === 1) return "grid-cols-1"
       if (count === 2) return "grid-cols-1 grid-rows-2"
       if (count === 3) return "grid-cols-2 grid-rows-2 [&>*:nth-child(3)]:col-span-2"
