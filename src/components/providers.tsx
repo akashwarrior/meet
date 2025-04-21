@@ -10,9 +10,9 @@ export default function Providers({
 }>) {
     return (
         // <SessionProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                {children}
-            </ThemeProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark">
+            {children}
+        </ThemeProvider>
         // </SessionProvider>
     );
 }
