@@ -1,86 +1,70 @@
-# 🖥️ RD Share
+# Meet – Real-time Video Meeting App
 
-**RD Share** is a real-time screen sharing web application built for seamless, peer-to-peer collaboration. It uses WebRTC for fast media streaming and Firebase for secure signaling and authentication—no plugins or extensions required.
+Meet is a high-performance real-time video meeting app built with Next.js and Node.js using WebRTC.  
+It delivers minimal-latency video calls with adaptive streaming and efficient peer-to-peer communication.
 
 ---
 
 ## 🚀 Features
 
-- 📺 Real-time screen sharing between peers
-- 🔐 Secure authentication with Firebase Auth
-- ⚡ Peer connection handling via Firestore as a signaling channel
-- 🎥 Optimized WebRTC implementation for high video clarity and low latency
+- Real-time video and audio communication
+- Adaptive streaming (resolution, framerate, bitrate)
+- Authentication with NextAuth
+- Scalable P2P architecture
+- Optimized for desktop and mobile
+- Built-in WebSocket signaling server
+- Prisma + PostgreSQL backend
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Local Development Setup
 
-- **Frontend:** Next.js, TypeScript, Tailwind CSS
-- **Backend/Infra:** Firebase (Firestore, Auth), WebRTC (getUserMedia, RTCPeerConnection)
+Follow the steps below to run Meet locally:
 
----
+### 1. Clone the repository
 
-##  Demo Video
-
-👉 [Watch Demo Video of RD Share](https://drive.google.com/file/d/1MGmWHGEic1e1yxNaCbwzqNdTHixpq634/view)  
-
----
-
-## 📺 Live Demo
-
-👉 [Try RD Share]([https://rd-share.vercel.app/](https://rd-share-git-main-akashwarriors-projects.vercel.app)  
-
----
-
-## 📦 Setup Instructions
-
- Clone the repository  
- ```bash
- git clone https://github.com/akashwarrior/rd-share.git
- cd rd-share
- ```
-Install dependencies
-
+```bash
+git clone https://github.com/akashwarrior/meet.git
+cd meet
+```
+### 2. Install dependencies
 ```bash
 npm install
 ```
-Add your Firebase config to .env.local
-
+### 3. Create environment variables
 ```bash
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+cp .env.example .env
 ```
-Start the development server
-
+### 4. Generate Prisma client
+```bash
+npm run generate
+```
+### 5. Start the app locally
 ```bash
 npm run dev
 ```
+Your app will be running at: http://localhost:3000
 
-	💡 How It Works
-When a user starts a session, their screen stream is captured using getDisplayMedia.
+---
 
-Connection details are exchanged via Firebase Firestore for signaling.
+## 🧠 Tech Stack
+##### - Frontend: Next.js, React, Tailwind CSS
 
-WebRTC establishes a peer-to-peer connection between participants, enabling direct screen sharing with low latency.
+##### - Backend: Node.js, WebSocket (WS), Prisma, PostgreSQL
 
-	📈 Optimizations
+##### - Auth: NextAuth.js
 
-Replaced WebSocket with Firestore to simplify peer signaling.
+##### - RTC: WebRTC API with custom signaling
 
-Reduced handshake time and enhanced stream reliability.
+##### - ORM: Prisma
 
-Designed with focus on smooth UX and real-time feedback.
 
-	🧠 Future Enhancements
+---
 
-Add voice communication
 
-Support for multi-user sharing
+## 📁 Project Structure
 
-Add session history & auto-expiration for links
-
-🤝 Contributing
-Contributions and suggestions are welcome! Feel free to open issues or pull requests.
-
-Let me know if you'd like to add diagrams, environment setup screenshots, or detailed signaling flow!
+    /src/app                   →   Next.js frontend
+    /src/store                 →   Zustand store
+    /src/lib/webrtc-service    →   WebRTC and signaling logic
+    /prisma                    →   Prisma schema and migrations
