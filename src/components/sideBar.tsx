@@ -6,10 +6,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "./ui/button";
 import { DataChannelMessage, WebRTCService } from "@/lib/webrtc-service";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { memo, useEffect, useRef, useState } from "react";
+import { FormEvent, memo, useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LogOut, MessageSquare, Mic, MicOff, MoreHorizontal, Send, Users, Video, VideoOff, X } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { MessageSquare, Mic, MicOff, Send, Users, Video, VideoOff, X } from "lucide-react";
 import useParticipantStore from "@/store/participant";
 import useSidebarOpenStore from "@/store/sideBar";
 
@@ -33,7 +32,7 @@ const SideBar = memo(({ service }: { service: WebRTCService }) => {
     }, [service])
 
     // Send a chat message
-    const SendMessage = (e: React.FormEvent) => {
+    const SendMessage = (e: FormEvent) => {
         e.preventDefault()
         const message = messageRef.current?.value || ""
         if (message.trim() && service) {
@@ -50,7 +49,7 @@ const SideBar = memo(({ service }: { service: WebRTCService }) => {
     }
 
     return (
-        <div className={cn("bg-background overflow-hidden border max-w-fulwl w-sm flex flex-col transition-all duration-300 rounded-lg",
+        <div className={cn("bg-background overflow-hidden border max-w-fulwl w-sm flex flex-col transition-all duration-200 ease-in-out rounded-lg",
             sidebarOpen ? "translate-x-0" : "translate-x-full w-0",
         )}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
@@ -86,7 +85,7 @@ const SideBar = memo(({ service }: { service: WebRTCService }) => {
                                         {participant.name ? <MicOff size="18" /> : <Mic size="18" />}
                                         {participant.name ? <VideoOff size="18" /> : <Video size="18" />}
                                     </div>
-                                    <DropdownMenu>
+                                    {/* <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
                                                 <MoreHorizontal size="6" />
@@ -105,7 +104,7 @@ const SideBar = memo(({ service }: { service: WebRTCService }) => {
                                                 Remove
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    </DropdownMenu> */}
                                 </div>
                             </div>
                         ))}

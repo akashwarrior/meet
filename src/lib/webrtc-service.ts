@@ -155,11 +155,9 @@ export class WebRTCService {
             await this.instance.connect();
             this.instance.stream = new MediaStream();
             if (isVideoEnabled) {
-                console.log("Video enabled")
                 this.instance.sendVideoStream({ deviceId: videoDeviceId })
             }
             if (isAudioEnabled) {
-                console.log("Audio enabled")
                 this.instance.sendAudioStream({ deviceId: audioDeviceId })
             }
         } catch (error) {
@@ -203,39 +201,40 @@ export class WebRTCService {
         this.socket.send(JSON.stringify(message))
     }
 
-    // Media stream ---
+
+    // Media streams ---
     public async sendVideoStream({ deviceId }: { deviceId?: string }): Promise<void> {
-        this.stream?.getVideoTracks().forEach((track) => {
-            track.stop();
-            this.stream?.removeTrack(track);
-        });
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: "user",
-                width: this.VIDEO_RESOLUTION.width,
-                height: this.VIDEO_RESOLUTION.height,
-                frameRate: this.VIDEO_FRAMES,
-                deviceId: deviceId ? { exact: deviceId } : undefined,
-            },
-            audio: false,
-        });
+        try {
+            await this.stopVideoStream();
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "user",
+                    width: this.VIDEO_RESOLUTION.width,
+                    height: this.VIDEO_RESOLUTION.height,
+                    frameRate: this.VIDEO_FRAMES,
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                },
+                audio: false,
+            });
 
-        const videoTrack = stream.getVideoTracks()[0];
-        this.stream?.addTrack(videoTrack);
-        this.onMediaTrackCallback?.({ id: this.userId!, track: videoTrack }, "video");
+            const videoTrack = stream.getVideoTracks()[0];
+            this.stream?.addTrack(videoTrack);
+            this.onMediaTrackCallback?.({ id: this.userId!, track: videoTrack }, "video");
 
-        for (const pc of this.peerConnection) {
-            const transceiver = pc.getTransceivers()[1];
-            await transceiver.sender.replaceTrack(videoTrack);
-            transceiver.direction = 'sendrecv';
+            for (const pc of this.peerConnection) {
+                const transceiver = pc.getTransceivers()[1];
+                await transceiver.sender.replaceTrack(videoTrack);
+                transceiver.direction = 'sendrecv';
+            }
+        } catch (error) {
+            console.error("Error sending video stream:", error)
+            this.onMediaTrackCallback?.({ id: this.userId!, track: null }, "video")
         }
+
     }
 
     public async sendAudioStream({ deviceId }: { deviceId?: string }): Promise<void> {
-        this.stream?.getAudioTracks().forEach((track) => {
-            track.stop();
-            this.stream?.removeTrack(track);
-        });
+        this.stopAudioStream();
         const stream = await navigator.mediaDevices.getUserMedia({
             video: false,
             audio: {
@@ -290,6 +289,7 @@ export class WebRTCService {
         }
 
         this.stream?.addTrack(audioTrack);
+        this.onMediaTrackCallback?.({ id: this.userId!, track: audioTrack }, "audio");
     }
 
     public async stopVideoStream(): Promise<void> {
@@ -316,11 +316,12 @@ export class WebRTCService {
                 await transceiver.sender.replaceTrack(null);
                 transceiver.direction = 'recvonly';
             }
+            this.onMediaTrackCallback?.({ id: this.userId!, track: null }, "audio");
         }
     }
 
 
-    private async setupPeerConnectionListeners({ sender, name }: { sender: string, name: string }): Promise<RTCPeerConnection> {
+    private setupPeerConnectionListeners({ sender, name }: { sender: string, name: string }): RTCPeerConnection {
         const existingPC = this.peerConnection.find(pc => pc.id === sender);
         if (existingPC) {
             return existingPC;
@@ -377,9 +378,16 @@ export class WebRTCService {
 
             if (pc.connectionState === "connected") {
                 console.log("Peer connection established")
+                if (this.stream) {
+                    if (pc.getTransceivers()[1].currentDirection === 'recvonly' && this.stream.getVideoTracks().length > 0) {
+                        this.sendVideoStream({})
+                    }
+                    if (pc.getTransceivers()[0].currentDirection === 'recvonly' && this.stream.getAudioTracks().length > 0) {
+                        this.sendAudioStream({})
+                    }
+                }
             }
         }
-
         return pc;
     }
 
@@ -387,8 +395,8 @@ export class WebRTCService {
         const { type, sender, data, name } = JSON.parse(event.data) as Message;
         switch (type) {
             case WebRTCEvents.USER_JOINED:
-                this.setupPeerConnectionListeners({ sender: sender!, name: name! })
-                    .then((pc) => this.createOffer(pc, sender!));
+                const pc = this.setupPeerConnectionListeners({ sender: sender!, name: name! })
+                this.createOffer(pc, sender!);
                 break
 
             case WebRTCEvents.OFFER:
@@ -441,19 +449,10 @@ export class WebRTCService {
 
     private async handleOffer({ sender, data, name }: Partial<Message>): Promise<void> {
         try {
-            const pc = await this.setupPeerConnectionListeners({ sender: sender!, name: name! })
+            const pc = this.setupPeerConnectionListeners({ sender: sender!, name: name! })
             await pc.setRemoteDescription(data as RTCSessionDescriptionInit)
-            if (this.stream) {
-                if (this.stream.getVideoTracks().length > 0) {
-                    this.sendVideoStream({})
-                }
-                if (this.stream.getAudioTracks().length > 0) {
-                    this.sendAudioStream({})
-                }
-            }
             const answer = await pc.createAnswer()
             await pc.setLocalDescription(answer)
-            this.onSucessCallback?.()
 
             this.sendMessage({
                 type: WebRTCEvents.ANSWER,
@@ -632,9 +631,9 @@ export class WebRTCService {
             transceiver.stop();
         });
         pc?.close();
-        this.onParticipantLeaveCallback.forEach(callback => callback?.(pc.id));
-        this.dataChannel = this.dataChannel.filter(channel => channel.sender !== pc.id);
-        this.peerConnection = this.peerConnection.filter(p => p.id !== pc.id);
+        this.onParticipantLeaveCallback.forEach(callback => callback?.(pc?.id));
+        this.dataChannel = this.dataChannel.filter(channel => channel.sender !== pc?.id);
+        this.peerConnection = this.peerConnection.filter(p => p.id !== pc?.id);
     }
 
     public close(): void {

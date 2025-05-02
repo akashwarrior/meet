@@ -1,7 +1,7 @@
-import { NextAuthOptions } from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcrypt';
-import prisma from './prisma';
+import { compare, hash } from 'bcrypt';
+import prisma from '@/lib/prisma';
 
 const SALT_ROUND = 10;
 
@@ -19,17 +19,15 @@ export const NEXT_AUTH = {
                     return null;
                 }
                 try {
-                    const user = await prisma.user.findUnique({
+                    const user = await prisma.user.findFirstOrThrow({
                         where: {
                             email: credentials.email.trim(),
                         },
                     });
-                    if (!user) {
-                        return null;
-                    }
-                    const res = await bcrypt.compare(credentials.password.trim(), user.password)
+
+                    const res = await compare(credentials.password.trim(), user.password);
                     if (!res) {
-                        return null;
+                        throw new Error('Invalid password');
                     }
                     return {
                         id: user.id,
@@ -39,8 +37,10 @@ export const NEXT_AUTH = {
                     };
                 }
                 catch (error) {
-                    console.log('Error in authorize:', error);
-                    return null;
+                    if (error instanceof Error && error.message.includes('No User found')) {
+                        throw new Error('User not found');
+                    }
+                    throw new Error('Error logging in user');
                 }
             },
         }),
@@ -55,9 +55,10 @@ export const NEXT_AUTH = {
             },
             async authorize(credentials: Record<"name" | "email" | "password", string> | undefined) {
                 if (!credentials || !credentials.name || !credentials.email || !credentials.password) {
+                    console.error("Invalid credentials:", credentials);
                     return null;
                 }
-                const hashedPassword = await bcrypt.hash(credentials.password.trim(), SALT_ROUND);
+                const hashedPassword = await hash(credentials.password.trim(), SALT_ROUND);
                 try {
                     const user = await prisma.user.create({
                         data: {
@@ -67,6 +68,7 @@ export const NEXT_AUTH = {
                             image: null,
                         },
                     })
+
                     return {
                         id: user.id,
                         name: user.name,
@@ -74,16 +76,19 @@ export const NEXT_AUTH = {
                         image: user.image,
                     };
                 } catch (error) {
-                    console.log('Error in authorize:', error);
-                    return null;
+                    console.error("Error creating user:", error);
+                    if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+                        throw new Error('User already exists with this email');
+                    }
+                    throw new Error('Error creating user');
                 }
             },
         }),
     ],
     secret: process.env.NEXTAUTH_SECRET,
     pages: {
-        signIn: '/login',
-        newUser: '/signup',
+        signIn: '/auth/login',
+        newUser: '/auth/signup',
     },
     session: {
         strategy: 'jwt',
@@ -94,9 +99,10 @@ export const NEXT_AUTH = {
         sessionToken: {
             name: `next-auth.session-token`,
             options: {
-                httpOnly: true,
-                sameSite: "None",
+                domain: 'akashgupta.tech',
                 path: '/',
+                httpOnly: true,
+                sameSite: "Lax",
                 secure: true,
             },
         },

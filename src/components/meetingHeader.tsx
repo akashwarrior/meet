@@ -2,11 +2,12 @@
 
 import { toast } from "sonner";
 import { memo, useEffect, useState } from "react";
-import { Button } from "./ui/button";
-import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button";
 import { Users, Info, UserPlus, Copy, Shield } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { WebRTCService } from "@/lib/webrtc-service";
+import { Input } from "./ui/input";
+import ThemeToggle from "@/components/theme-toggle"
 
 import {
     DropdownMenu,
@@ -39,8 +40,8 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
 
     // Copy meeting link
     const copyMeetingLink = () => {
-        // const link = `${window.location.origin}/meeting/${id}?name=Guest`
-        // navigator.clipboard.writeText(link)
+        const link = window.location.href
+        navigator.clipboard.writeText(link)
         toast.success("Meeting link copied", {
             description: "Share this link with others to invite them",
             duration: 2000,
@@ -64,10 +65,7 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
     const admit = (participantId: string) => {
         const waitingParticipant = waitingParticipants.find((p) => p.id === participantId)
         if (waitingParticipant) {
-            // Add to participants
             service.acceptRequest(participantId)
-
-            // Remove from waiting room
             setWaitingParticipants((prev) => prev.filter((p) => p.id !== participantId))
 
             toast.success("Participant admitted", {
@@ -81,7 +79,6 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
         const waitingParticipant = waitingParticipants.find((p) => p.id === participantId)
         if (waitingParticipant) {
             service.rejectRequest(participantId)
-            // Remove from waiting room
             setWaitingParticipants((prev) => prev.filter((p) => p.id !== participantId))
 
             toast.success("Participant rejected", {
@@ -123,7 +120,7 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
                             <DialogDescription>Share this meeting link with others you want to invite</DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center space-x-2 mt-4">
-                            {/* <Input value={`${window.location.origin}/meeting/${id}?name=Guest`} readOnly className="flex-1" /> */}
+                            <Input value={window.location.href} readOnly className="flex-1 focus-visible:ring-0" />
                             <Button onClick={copyMeetingLink} size="icon">
                                 <Copy className="h-4 w-4" />
                             </Button>

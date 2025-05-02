@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 
-export function useMobile({ width = 768 }: { width?: number } = {}) {
+const width = 768;
+
+export function useMobile() {
     const [isMobile, setIsMobile] = useState(false)
 
     useEffect(() => {
