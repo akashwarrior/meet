@@ -1,14 +1,16 @@
 import { NextRequest } from "next/server"
 import { getServerSession } from "next-auth/next";
 import prisma from "@/lib/prisma"
+import { NEXT_AUTH } from "@/lib/auth";
 
 const ERROR_CAUSE = "WRONG_INPUTS";
 
 export async function POST(req: NextRequest) {
-    const session = await getServerSession()
+    const session = await getServerSession(NEXT_AUTH);
 
     try {
         if (!session?.user) {
+            console.error("No session found", session);
             throw new Error("No user ID provided", { cause: ERROR_CAUSE });
         }
 
