@@ -1,12 +1,11 @@
-import { NEXT_AUTH } from "@/lib/auth";
-import prisma from "@/lib/prisma"
-import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server"
+import { getServerSession } from "next-auth/next";
+import prisma from "@/lib/prisma"
 
 const ERROR_CAUSE = "WRONG_INPUTS";
 
 export async function POST(req: NextRequest) {
-    const session = await getServerSession(NEXT_AUTH)
+    const session = await getServerSession()
 
     try {
         if (!session?.user) {
@@ -36,11 +35,9 @@ export async function POST(req: NextRequest) {
         });
 
         const baseUrl = req.nextUrl.origin;
-
         return Response.json({ link: `${baseUrl}/meeting/${meeting.id}` }, { status: 200 });
 
     } catch (err) {
-
         return Response.json({
             error: (err instanceof Error ? (err.cause === ERROR_CAUSE) && err.message : "Failed to create meeting"),
         }, {

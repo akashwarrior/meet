@@ -21,11 +21,9 @@ const useStreamTrackstore = create<StreamTrackStore>()((set) => ({
 
         let updatedTracks
         if (index !== -1) {
-            // update existing
             updatedTracks = [...existing]
             updatedTracks[index] = { id, track }
         } else {
-            // add new
             updatedTracks = [...existing, { id, track }]
         }
 

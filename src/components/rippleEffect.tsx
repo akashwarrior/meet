@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, MouseEvent } from "react";
+
+const DURATION = 2000;
 
 export default function RippleEffect({ isWhite }: { isWhite: boolean }) {
     const [rippleArray, setRippleArray] = useState<{
@@ -10,7 +12,6 @@ export default function RippleEffect({ isWhite }: { isWhite: boolean }) {
     }[]>([]);
 
     useEffect(() => {
-        const duration = 2000;
         if (rippleArray.length > 0) {
             const bounce = setTimeout(() => {
                 setRippleArray((prev) => {
@@ -19,7 +20,7 @@ export default function RippleEffect({ isWhite }: { isWhite: boolean }) {
                     return newRippleArray;
                 });
                 clearTimeout(bounce);
-            }, duration);
+            }, DURATION);
 
             return () => {
                 clearTimeout(bounce);
@@ -28,7 +29,7 @@ export default function RippleEffect({ isWhite }: { isWhite: boolean }) {
     }, [rippleArray])
 
 
-    const addRipple = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const addRipple = (event: MouseEvent<HTMLDivElement>) => {
         const { width, height, x: rippleX, y: RippleY } = event.currentTarget.getBoundingClientRect();
         const size = width > height ? width : height;
         const x = event.pageX - rippleX - size / 2;

@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils";
 import { memo, useEffect, useState } from "react";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
-import { LiveClock } from "./liveClock";
+import LiveClock from "./liveClock";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { MessageSquare, Mic, MicOff, Phone, Users, Video, VideoOff } from "lucide-react";
 import { WebRTCService } from "@/lib/webrtc-service";
 import useSidebarOpenStore from "@/store/sideBar";
 import useMeetingPrefsStore from "@/store/meetingPrefs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { MessageSquare, Mic, MicOff, Phone, Users, Video, VideoOff } from "lucide-react";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const MeetingFooter = memo(({ service }: { service: WebRTCService }) => {
     const router = useRouter()
@@ -54,8 +54,8 @@ const MeetingFooter = memo(({ service }: { service: WebRTCService }) => {
                     const video = devices.filter((device) => device.kind === "videoinput")
                     setAudioDevices(audio)
                     setVideoDevices(video)
-                    setAudioPrefs({ audioInputDevice: audio[0] || "default" })
-                    setVideoPrefs({ videoInputDevice: video[0] || "default" })
+                    setAudioPrefs({ audioInputDevice: audio[0] })
+                    setVideoPrefs({ videoInputDevice: video[0] })
                 })
         }
     }, [isAudioEnabled, isVideoEnabled, setAudioPrefs, setVideoPrefs])

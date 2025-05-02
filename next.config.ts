@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   experimental: {
     viewTransition: true,
     cssChunking: true,
+    parallelServerCompiles: true,
+    parallelServerBuildTraces: true,
+    webpackBuildWorker: true,
   },
 };
 

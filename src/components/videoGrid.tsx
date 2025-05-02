@@ -1,19 +1,21 @@
 'use client'
 
 import { cn } from "@/lib/utils"
-import { memo, useCallback, useMemo, useState } from "react"
+import { memo, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
 import { useMobile } from "@/hooks/use-mobile"
 import { LucideChevronLeft, LucideChevronRight } from "lucide-react"
-import { motion } from "motion/react"
+import { LazyMotion } from "motion/react"
+import * as motion from "motion/react-m"
 import Participant from "./participant"
 import useParticipantStore from "@/store/participant"
 
+const loadFeatures = () => import("@/components/domAnimation").then(res => res.default)
+
 const VideoGrid = memo(() => {
-    const mobile = useMobile();
     const [currentPage, setCurrentPage] = useState(0)
     const participants = useParticipantStore((state) => state.participants)
+    const mobile = useMobile();
 
     const participantsPerPage = mobile ? 6 : 9
     const totalPages = participants.length / participantsPerPage
@@ -24,14 +26,6 @@ const VideoGrid = memo(() => {
 
         return participants.slice(start, end)
     }, [participants, currentPage, participantsPerPage]);
-
-    // Remove a participant from the meeting
-    const removeParticipant = useCallback((participantId: string) => {
-        toast.success("Participant removed", {
-            description: `${participantId} has been removed from the meeting`,
-            duration: 2000,
-        })
-    }, []);
 
 
     const getGridClass = useMemo(() => {
@@ -54,55 +48,58 @@ const VideoGrid = memo(() => {
 
 
     return (
-        <main className="flex-1 flex flex-grow overflow-hidden">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2 }}
-                className={cn("h-full w-full p-2 grid gap-2", getGridClass)}
-            >
-                {currentParticipants.map(
-                    (participant) =>
-                        <Participant
-                            key={participant.id}
-                            participant={participant}
-                            onRemove={() => removeParticipant(participant.id)}
-                        />
-                )}
-            </motion.div>
-
-            {totalPages > 1 && (
-                <div className="absolute bottom-20 left-0 w-full flex justify-center items-center space-x-2 z-50">
-                    <Button
-                        size="icon"
-                        className="rounded-full bg-primary text-white"
-                        onClick={() => setCurrentPage((prev) => prev - 1)}
-                        disabled={currentPage === 0}
-                    >
-                        <LucideChevronLeft className="h-4 w-4" />
-                    </Button>
-
-                    <div className="flex space-x-1">
-                        {Array.from({ length: totalPages }, (_, index) => (
-                            <motion.div
-                                key={index}
-                                className={cn("h-2 w-2 rounded-full shadow border", currentPage === index ? "bg-primary" : "bg-gray-400")}
+        <LazyMotion features={loadFeatures}>
+            <div className="flex-1 flex flex-grow overflow-hidden">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                    className={cn("h-full w-full p-2 grid gap-2 ", getGridClass)}
+                    layout
+                >
+                    {currentParticipants.map(
+                        (participant) =>
+                            <Participant
+                                key={participant.id}
+                                myId={participants[0].id}
+                                participant={participant}
                             />
-                        ))}
-                    </div>
+                    )}
+                </motion.div>
 
-                    <Button
-                        size="icon"
-                        className="rounded-full bg-primary text-white"
-                        onClick={() => setCurrentPage((prev) => prev + 1)}
-                        disabled={currentPage === totalPages - 1}
-                    >
-                        <LucideChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
-            )}
-        </main>
+                {totalPages > 1 && (
+                    <div className="absolute bottom-20 left-0 w-full flex justify-center items-center space-x-2 z-50">
+                        <Button
+                            size="icon"
+                            className="rounded-full bg-primary text-white"
+                            onClick={() => setCurrentPage((prev) => prev - 1)}
+                            disabled={currentPage === 0}
+                        >
+                            <LucideChevronLeft className="h-4 w-4" />
+                        </Button>
+
+                        <div className="flex space-x-1">
+                            {Array.from({ length: totalPages }, (_, index) => (
+                                <motion.div
+                                    key={index}
+                                    className={cn("h-2 w-2 rounded-full shadow border", currentPage === index ? "bg-primary" : "bg-gray-400")}
+                                />
+                            ))}
+                        </div>
+
+                        <Button
+                            size="icon"
+                            className="rounded-full bg-primary text-white"
+                            onClick={() => setCurrentPage((prev) => prev + 1)}
+                            disabled={currentPage === totalPages - 1}
+                        >
+                            <LucideChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </LazyMotion>
     )
 });
 

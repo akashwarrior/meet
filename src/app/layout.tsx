@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { ReactNode } from "react";
 import localFont from 'next/font/local'
 import Providers from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { NEXT_AUTH } from "@/lib/auth";
 import "./globals.css";
 
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
   keywords: "video conferencing, online meetings, collaboration, end-to-end encryption, secure communication",
 }
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const session = await getServerSession(NEXT_AUTH);
 
   return (
