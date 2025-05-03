@@ -51,7 +51,7 @@ export class WebRTCService {
 
     // Video options
     private readonly MAX_VIDEO_BITRATE: number = 6_000_000;  // 6 Mbps
-    private DEFAULT_VIDEO_CODEC: string = "video/H264";
+    private DEFAULT_VIDEO_CODEC: string = "video/VP9";
     private VIDEO_RESOLUTION: {
         width: { ideal: number, max: number },
         height: { ideal: number, max: number }
@@ -377,12 +377,11 @@ export class WebRTCService {
             }
 
             if (pc.connectionState === "connected") {
-                console.log("Peer connection established")
                 if (this.stream) {
-                    if (pc.getTransceivers()[1].currentDirection === 'recvonly' && this.stream.getVideoTracks().length > 0) {
+                    if (pc.getTransceivers()[1].currentDirection !== 'sendrecv' && this.stream.getVideoTracks().length > 0) {
                         this.sendVideoStream({})
                     }
-                    if (pc.getTransceivers()[0].currentDirection === 'recvonly' && this.stream.getAudioTracks().length > 0) {
+                    if (pc.getTransceivers()[0].currentDirection !== 'sendrecv' && this.stream.getAudioTracks().length > 0) {
                         this.sendAudioStream({})
                     }
                 }
@@ -597,29 +596,26 @@ export class WebRTCService {
         const audioCodec = audioCapabilities?.codecs.find(codec => codec.mimeType === this.DEFAULT_AUDIO_CODEC)
             || audioCapabilities?.codecs[0];
 
-        if (audioCodec) {
-            audioTransceiver.setCodecPreferences([audioCodec]);
-        }
-
         const videoCapabilities = RTCRtpSender.getCapabilities('video');
         const videoCodec = videoCapabilities?.codecs.find(codec => codec.mimeType === this.DEFAULT_VIDEO_CODEC)
-            || videoCapabilities?.codecs.find(codec => codec.mimeType === 'video/VP9')
             || videoCapabilities?.codecs.find(codec => codec.mimeType === 'video/VP8')
+            || videoCapabilities?.codecs.find(codec => codec.mimeType === 'video/H264')
             || videoCapabilities?.codecs[0];
 
-
-        if (videoCodec) {
-            videoTransceiver.setCodecPreferences([videoCodec]);
-        }
-
         if (isAudioEnabled) {
-            await audioTransceiver.sender.setParameters(audioParams);
             await audioTransceiver.sender.replaceTrack(this.stream!.getAudioTracks()[0]);
+            await audioTransceiver.sender.setParameters(audioParams);
+            if (audioCodec) {
+                audioTransceiver.setCodecPreferences([audioCodec]);
+            }
         }
 
         if (isVideoEnabled) {
-            await videoTransceiver.sender.setParameters(videoParams);
             await videoTransceiver.sender.replaceTrack(this.stream!.getVideoTracks()[0]);
+            await videoTransceiver.sender.setParameters(videoParams);
+            if (videoCodec) {
+                videoTransceiver.setCodecPreferences([videoCodec]);
+            }
         }
     }
 
@@ -675,78 +671,10 @@ export class WebRTCService {
         this.onParticipantJoinCallback = null
         this.onParticipantLeaveCallback = []
         this.onDataChannelMessageCallback = null
+        this.onSucessCallback = null
+        this.onUserRequestCallback = null
+        this.userId = null
+        this.userName = null
+        WebRTCService.instance = null;
     }
 }
-
-
-// media stats
-
-// Get stats -> media stats
-// private async getStats(pc: RTCPeerConnection): Promise<void> {
-//     const outbTraces = new Map<string, { qualityLimitationReason: string }>();
-//     const remoteInbTraces = new Map<string, { totalRoundTripTime: number, roundTripTimeMeasurements: number }>();
-//     let ewmaRttInMs: number | undefined;
-//     let congested = false;
-
-//     setInterval(async () => {
-//         const roundTripTimeMeasurements: number[] = [];
-//         (await (pc.getStats())).forEach((report) => {
-//             if (report.type === 'outbound-rtp') {
-//                 const newTrace = {
-//                     qualityLimitationReason: report.qualityLimitationReason,
-//                 };
-
-//                 outbTraces.set(report.id, newTrace);
-//             }
-
-//             if (report.type === 'remote-inbound-rtp' && report.totalRoundTripTime && report.roundTripTimeMeasurements) {
-//                 let trace = remoteInbTraces.get(report.id);
-
-//                 if (!trace) {
-//                     trace = {
-//                         totalRoundTripTime: 0,
-//                         roundTripTimeMeasurements: 0,
-//                     };
-
-//                     remoteInbTraces.set(report.id, trace);
-//                 }
-
-//                 const diffMeasurements = report.roundTripTimeMeasurements - trace.roundTripTimeMeasurements;
-//                 const diffTotalRoundTripTime = report.totalRoundTripTime - trace.totalRoundTripTime;
-
-//                 if (diffMeasurements > 0 && diffTotalRoundTripTime > 0) {
-//                     const avgRttInInterval = diffTotalRoundTripTime / diffMeasurements;
-
-//                     trace.totalRoundTripTime = report.totalRoundTripTime;
-//                     trace.roundTripTimeMeasurements = report.roundTripTimeMeasurements;
-
-//                     roundTripTimeMeasurements.push(avgRttInInterval * 1000);
-//                 }
-//             }
-//         });
-
-//         const avgRoundTripTimeInMs = roundTripTimeMeasurements.reduce((a, b) => a + b, 0) / roundTripTimeMeasurements.length;
-//         if (!Number.isNaN(avgRoundTripTimeInMs)) {
-//             if (!ewmaRttInMs) {
-//                 ewmaRttInMs = avgRoundTripTimeInMs;
-//             }
-
-//             const isBandwidthLimited = [...outbTraces.values()].some((trace) => trace.qualityLimitationReason === 'bandwidth');
-
-//             if (!congested && isBandwidthLimited && (avgRoundTripTimeInMs - ewmaRttInMs) > 50) {
-
-//                 console.warn('Congestion detected, the network is bandwidth limited and the round trip time is increasing (ewmaRtt: %d, avgRoundTripTime: %d)', ewmaRttInMs, avgRoundTripTimeInMs);
-//                 congested = true;
-//             } else if (congested && (avgRoundTripTimeInMs - ewmaRttInMs) < 30) {
-
-//                 console.info('Congestion resolved, the round trip time is back to normal (ewmaRtt: %d, avgRoundTripTime: %d)', ewmaRttInMs, avgRoundTripTimeInMs);
-//                 congested = false;
-//             }
-
-//             ewmaRttInMs = (0.9 * ewmaRttInMs) + (0.1 * avgRoundTripTimeInMs);
-
-
-//             console.info(`avgRoundTripTime: ${avgRoundTripTimeInMs.toFixed(2)}, ewmaRttInMs: ${ewmaRttInMs.toFixed(2)}, bandwidthLimited: ${isBandwidthLimited}`);
-//         }
-//     }, 1000);
-// }
