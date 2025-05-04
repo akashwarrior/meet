@@ -35,7 +35,7 @@ const defaultVideoPrefs: VideoPrefs = {
     videoInputDevice: null,
     videoResolution: { width: 1920, height: 1080 },
     videoFrames: 30,
-    videoCodec: "video/H264",
+    videoCodec: "video/VP9",
 };
 
 const defaultAudioPrefs: AudioPrefs = {

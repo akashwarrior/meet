@@ -9,14 +9,20 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
     redirect("/");
   }
 
-  const meeting = await prisma.meeting.findUnique({
-    where: {
-      id: meetingId
-    },
-    select: {
-      id: true,
-    }
-  })
+  let meeting: { id: string } | null = null
+
+  try {
+    meeting = await prisma.meetings.findUnique({
+      where: {
+        id: meetingId
+      },
+      select: {
+        id: true,
+      }
+    })
+  } catch (error) {
+    redirect("/");
+  }
 
   if (!meeting?.id) {
     redirect("/")

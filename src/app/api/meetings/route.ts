@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
             throw new Error("Invalid user ID provided", { cause: ERROR_CAUSE });
         }
 
-        const meeting = await prisma.meeting.create({
+        const meeting = await prisma.meetings.create({
             data: {
                 hostId,
             },
