@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
         if (!id) {
             return Response.json({ error: "Meeting ID is required" }, { status: 400 })
         }
-        const res = await prisma.meeting.findUnique({
+        const res = await prisma.meetings.findUnique({
             where: {
                 id,
             }

@@ -50,17 +50,17 @@ export class WebRTCService {
     private MEDIA_TRACK_PRIORITY: RTCPriorityType;
 
     // Video options
-    private readonly MAX_VIDEO_BITRATE: number = 6_000_000;  // 6 Mbps
-    private DEFAULT_VIDEO_CODEC: string = "video/VP9";
+    private readonly MAX_VIDEO_BITRATE: number = 1_000_000;  // 1 Mbps
+    private DEFAULT_VIDEO_CODEC: string;
     private VIDEO_RESOLUTION: {
         width: { ideal: number, max: number },
         height: { ideal: number, max: number }
     };;
-    private VIDEO_FRAMES: { ideal: number, max: number };
+    private VIDEO_FRAMES: { exact: number, max: number };
 
     // Audio options
     private readonly DEFAULT_AUDIO_CODEC: string = "audio/opus"
-    private readonly MAX_AUDIO_BITRATE: number = 64_000 // 64 kbps
+    private readonly MAX_AUDIO_BITRATE: number = 1_28_000; // 128 kbps
     private readonly COMPRESSION_CONFIG = {
         threshold: 0,
         knee: 40,
@@ -97,7 +97,7 @@ export class WebRTCService {
         mediaTrackPriority: RTCPriorityType,
         videoCodec: string,
         videoResolution: { width: { ideal: number, max: number }, height: { ideal: number, max: number } },
-        videoFrames: { ideal: number, max: number },
+        videoFrames: { exact: number, max: number },
     }) {
 
         this.peerConnection = []
@@ -146,7 +146,7 @@ export class WebRTCService {
                 mediaTrackPriority,
                 videoCodec,
                 videoResolution: { width: { ideal: videoResolution.width, max: 1920 }, height: { ideal: videoResolution.height, max: 1080 } },
-                videoFrames: { ideal: videoFrames, max: 60 },
+                videoFrames: { exact: videoFrames, max: 60 },
             });
         }
         try {
@@ -187,8 +187,8 @@ export class WebRTCService {
                 reject(error)
             }
 
-            this.socket.onclose = () => {
-                console.log("WebSocket connection closed")
+            this.socket.onclose = (error) => {
+                reject(error)
             }
         })
     }
@@ -213,6 +213,7 @@ export class WebRTCService {
                     height: this.VIDEO_RESOLUTION.height,
                     frameRate: this.VIDEO_FRAMES,
                     deviceId: deviceId ? { exact: deviceId } : undefined,
+                    aspectRatio: this.VIDEO_RESOLUTION.width.ideal / this.VIDEO_RESOLUTION.height.ideal,
                 },
                 audio: false,
             });
@@ -235,61 +236,63 @@ export class WebRTCService {
 
     public async sendAudioStream({ deviceId }: { deviceId?: string }): Promise<void> {
         this.stopAudioStream();
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: false,
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                sampleRate: 48000,
-                channelCount: 1,
-                sampleSize: 16,
-                deviceId: deviceId ? { exact: deviceId } : undefined,
-            },
-        });
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: false,
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: false,
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                },
+            });
 
-        const audioContext = new AudioContext();
-        const source = audioContext.createMediaStreamSource(stream);
+            const audioContext = new AudioContext();
+            const source = audioContext.createMediaStreamSource(stream);
 
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = 1.5;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = 1.5;
 
-        const highPassFilter = audioContext.createBiquadFilter();
-        highPassFilter.type = "highpass";
-        highPassFilter.frequency.value = 100;
+            const highPassFilter = audioContext.createBiquadFilter();
+            highPassFilter.type = "highpass";
+            highPassFilter.frequency.value = 100;
 
-        const lowPassFilter = audioContext.createBiquadFilter();
-        lowPassFilter.type = "lowpass";
-        lowPassFilter.frequency.value = 11000;
+            const lowPassFilter = audioContext.createBiquadFilter();
+            lowPassFilter.type = "lowpass";
+            lowPassFilter.frequency.value = 11000;
 
-        const compressor = audioContext.createDynamicsCompressor();
-        compressor.threshold.setValueAtTime(this.COMPRESSION_CONFIG.threshold, audioContext.currentTime);
-        compressor.knee.setValueAtTime(this.COMPRESSION_CONFIG.knee, audioContext.currentTime);
-        compressor.ratio.setValueAtTime(this.COMPRESSION_CONFIG.ratio, audioContext.currentTime);
-        compressor.attack.setValueAtTime(this.COMPRESSION_CONFIG.attack, audioContext.currentTime);
-        compressor.release.setValueAtTime(this.COMPRESSION_CONFIG.release, audioContext.currentTime);
+            const compressor = audioContext.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(this.COMPRESSION_CONFIG.threshold, audioContext.currentTime);
+            compressor.knee.setValueAtTime(this.COMPRESSION_CONFIG.knee, audioContext.currentTime);
+            compressor.ratio.setValueAtTime(this.COMPRESSION_CONFIG.ratio, audioContext.currentTime);
+            compressor.attack.setValueAtTime(this.COMPRESSION_CONFIG.attack, audioContext.currentTime);
+            compressor.release.setValueAtTime(this.COMPRESSION_CONFIG.release, audioContext.currentTime);
 
-        source
-            .connect(highPassFilter)
-            .connect(lowPassFilter)
-            .connect(compressor)
-            .connect(gainNode)
+            source
+                .connect(highPassFilter)
+                .connect(lowPassFilter)
+                .connect(compressor)
+                .connect(gainNode)
 
-        const destination = audioContext.createMediaStreamDestination();
-        gainNode.connect(destination);
+            const destination = audioContext.createMediaStreamDestination();
+            gainNode.connect(destination);
 
 
-        const processedStream = destination.stream;
-        const audioTrack = processedStream.getAudioTracks()[0];
+            const processedStream = destination.stream;
+            const audioTrack = processedStream.getAudioTracks()[0];
 
-        for (const pc of this.peerConnection) {
-            const transceiver = pc.getTransceivers()[0];
-            await transceiver.sender.replaceTrack(audioTrack);
-            transceiver.direction = 'sendrecv';
+            for (const pc of this.peerConnection) {
+                const transceiver = pc.getTransceivers()[0];
+                await transceiver.sender.replaceTrack(audioTrack);
+                transceiver.direction = 'sendrecv';
+            }
+
+            this.stream?.addTrack(audioTrack);
+            this.onMediaTrackCallback?.({ id: this.userId!, track: audioTrack }, "audio");
+        } catch (error) {
+            console.error("Error sending audio stream:", error)
+            this.onMediaTrackCallback?.({ id: this.userId!, track: null }, "audio")
         }
-
-        this.stream?.addTrack(audioTrack);
-        this.onMediaTrackCallback?.({ id: this.userId!, track: audioTrack }, "audio");
     }
 
     public async stopVideoStream(): Promise<void> {
@@ -602,20 +605,21 @@ export class WebRTCService {
             || videoCapabilities?.codecs.find(codec => codec.mimeType === 'video/H264')
             || videoCapabilities?.codecs[0];
 
+        if (audioCodec) {
+            audioTransceiver.setCodecPreferences([audioCodec]);
+        }
         if (isAudioEnabled) {
             await audioTransceiver.sender.replaceTrack(this.stream!.getAudioTracks()[0]);
             await audioTransceiver.sender.setParameters(audioParams);
-            if (audioCodec) {
-                audioTransceiver.setCodecPreferences([audioCodec]);
-            }
         }
 
+        if (videoCodec) {
+            console.log("Video codec:", videoCodec)
+            videoTransceiver.setCodecPreferences([videoCodec]);
+        }
         if (isVideoEnabled) {
             await videoTransceiver.sender.replaceTrack(this.stream!.getVideoTracks()[0]);
             await videoTransceiver.sender.setParameters(videoParams);
-            if (videoCodec) {
-                videoTransceiver.setCodecPreferences([videoCodec]);
-            }
         }
     }
 

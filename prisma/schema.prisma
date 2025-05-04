@@ -24,12 +24,13 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  Meeting Meeting[]
+  Meetings Meetings[]
+
   // indexes
   @@index([email])
 }
 
-model Meeting {
+model Meetings {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 

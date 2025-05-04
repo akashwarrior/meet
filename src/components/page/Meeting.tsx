@@ -36,8 +36,7 @@ export default function Meeting({ meetingId }: { meetingId: string }) {
                     videoCodec: video.videoCodec,
                     videoDeviceId: video.videoInputDevice?.deviceId,
                     audioDeviceId: audio.audioInputDevice?.deviceId,
-                })
-                .then((instance) => {
+                }).then((instance) => {
                     instance.onConnectionSuccess(() => {
                         setWebRTCService(instance);
                         setIsLoading(false);
@@ -45,13 +44,11 @@ export default function Meeting({ meetingId }: { meetingId: string }) {
                     instance.onParticipantJoined(addParticipant);
                     instance.onParticipantLeave(removeParticipant);
                     instance.onMediaTrack(updateTracks);
-                })
-                .catch((error) => {
+                }).catch((error) => {
                     toast.error("Error joining meeting", {
                         description: error.message,
                     })
                     setIsLoading(true);
-                    setWebRTCService(null);
                 });
         }
 

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "generate": "prisma generate",
-    "lint": "next lint"
+    "lint": "next lint",
+    "server:build": "prisma generate --no-engine && next build"
   },
   "dependencies": {
     "@livekit/components-react": "^2.9.3",
@@ -20,6 +21,7 @@
     "@radix-ui/react-scroll-area": "^1.2.5",
     "@radix-ui/react-select": "^2.2.2",
     "@radix-ui/react-slot": "^1.2.0",
+    "@radix-ui/react-switch": "^1.2.2",
     "@radix-ui/react-tabs": "^1.1.7",
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.1",
@@ -38,7 +40,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "^6.7.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20",
@@ -46,7 +48,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
-    "prisma": "^6.6.0",
+    "prisma": "^6.7.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
