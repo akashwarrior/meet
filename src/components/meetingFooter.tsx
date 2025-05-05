@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from "@/lib/utils";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import LiveClock from "./liveClock";
 import { useRouter } from "next/navigation";
@@ -11,12 +11,53 @@ import { Maximize, MessageSquare, Mic, MicOff, MoreVertical, Phone, Users, Video
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import SettingsDialog from "./settingsDialog";
 import { toast } from "sonner";
+import { WebRTCService } from "@/lib/webrtc-service";
 
-const MeetingFooter = memo(() => {
+const MeetingFooter = memo(({ service }: { service: WebRTCService }) => {
     const router = useRouter()
     const [showSettings, setShowSettings] = useState(false)
-    const { meeting: { isAudioEnabled, isVideoEnabled }, setMeetingPrefs } = useMeetingPrefsStore()
+    const {
+        video: {
+            videoCodec,
+            videoFrames,
+            backgroundBlur,
+            videoInputDevice,
+            videoResolution,
+        },
+        audio: {
+            audioInputDevice,
+        },
+        meeting: {
+            isAudioEnabled,
+            isVideoEnabled
+        },
+        setMeetingPrefs } = useMeetingPrefsStore()
     const { sidebarOpen, activeTab, setSidebarOpen, setActiveTab } = useSidebarOpenStore()
+
+    useEffect(() => {
+        if (service && isVideoEnabled) {
+            service.sendVideoStream({
+                backgroundBlur,
+                codec: videoCodec,
+                frames: videoFrames,
+                resolution: videoResolution,
+                deviceId: videoInputDevice?.deviceId,
+            })
+        } else {
+            service.stopVideoStream()
+        }
+    }, [isVideoEnabled, videoCodec, videoFrames, videoInputDevice, videoResolution])
+
+
+    useEffect(() => {
+        if (service && isAudioEnabled) {
+            service.sendAudioStream({
+                deviceId: audioInputDevice?.deviceId,
+            })
+        } else {
+            service.stopAudioStream()
+        }
+    }, [isAudioEnabled, audioInputDevice])
 
     // Toggle sidebar
     const toggleSidebar = (tab: string) => {

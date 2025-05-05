@@ -203,17 +203,24 @@ export class WebRTCService {
 
 
     // Media streams ---
-    public async sendVideoStream({ deviceId }: { deviceId?: string }): Promise<void> {
+    public async sendVideoStream({ resolution, codec, frames, deviceId, backgroundBlur }: {
+        resolution?: { width: number, height: number },
+        codec?: string,
+        frames?: number,
+        deviceId?: string
+        backgroundBlur?: boolean,
+    }): Promise<void> {
         try {
             await this.stopVideoStream();
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: "user",
-                    width: this.VIDEO_RESOLUTION.width,
-                    height: this.VIDEO_RESOLUTION.height,
-                    frameRate: this.VIDEO_FRAMES,
+                    width: resolution ? { exact: resolution.width } : this.VIDEO_RESOLUTION.width,
+                    height: resolution ? { exact: resolution.height } : this.VIDEO_RESOLUTION.height,
+                    frameRate: frames ? { exact: frames } : this.VIDEO_FRAMES,
                     deviceId: deviceId ? { exact: deviceId } : undefined,
-                    aspectRatio: this.VIDEO_RESOLUTION.width.ideal / this.VIDEO_RESOLUTION.height.ideal,
+                    aspectRatio: { ideal: 16 / 9 },
+                    autoGainControl: backgroundBlur ? false : true,
                 },
                 audio: false,
             });
@@ -224,6 +231,15 @@ export class WebRTCService {
 
             for (const pc of this.peerConnection) {
                 const transceiver = pc.getTransceivers()[1];
+                const videoCapabilities = RTCRtpSender.getCapabilities('video');
+                const videoCodec = videoCapabilities?.codecs.find(c => c.mimeType === `video/${codec}`)
+                    || videoCapabilities?.codecs.find(codec => codec.mimeType === 'video/VP8')
+                    || videoCapabilities?.codecs.find(codec => codec.mimeType === 'video/H264')
+                    || videoCapabilities?.codecs[0];
+
+                if (videoCodec) {
+                    transceiver.setCodecPreferences([videoCodec]);
+                }
                 await transceiver.sender.replaceTrack(videoTrack);
                 transceiver.direction = 'sendrecv';
             }
@@ -375,7 +391,6 @@ export class WebRTCService {
                 pc.connectionState === "failed" ||
                 pc.connectionState === "closed"
             ) {
-                console.log("Peer connection disconnected or failed");
                 this.connectionCleanup(pc);
             }
 
@@ -614,7 +629,6 @@ export class WebRTCService {
         }
 
         if (videoCodec) {
-            console.log("Video codec:", videoCodec)
             videoTransceiver.setCodecPreferences([videoCodec]);
         }
         if (isVideoEnabled) {

@@ -9,6 +9,7 @@ interface VideoPrefs {
     };
     videoFrames: number;
     videoCodec: string;
+    backgroundBlur: boolean;
 }
 
 interface AudioPrefs {
@@ -35,7 +36,8 @@ const defaultVideoPrefs: VideoPrefs = {
     videoInputDevice: null,
     videoResolution: { width: 1920, height: 1080 },
     videoFrames: 30,
-    videoCodec: "video/VP9",
+    videoCodec: "VP8",
+    backgroundBlur: false,
 };
 
 const defaultAudioPrefs: AudioPrefs = {

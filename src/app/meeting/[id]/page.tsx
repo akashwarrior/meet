@@ -21,6 +21,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
       }
     })
   } catch (error) {
+    console.error("Error fetching meeting:", error)
     redirect("/");
   }
 
