@@ -9,7 +9,7 @@ import { toast } from "sonner"
 import { LazyMotion } from 'motion/react'
 import * as motion from 'motion/react-m'
 import { useSession } from "next-auth/react"
-import { useState, useEffect, useRef, memo } from "react"
+import { useState, useEffect, useRef, memo, useMemo } from "react"
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog"
 import { ChevronDown, EllipsisVertical, Mic, MicOff, Video, VideoOff, Volume2 } from "lucide-react"
 import useMeetingPrefsStore from "@/store/meetingPrefs"
@@ -41,7 +41,7 @@ export default function PreMeeting({
     const [showSettings, setShowSettings] = useState(false)
 
     const {
-        video: { videoInputDevice, videoFrames, videoResolution },
+        video: { videoInputDevice, videoFrames, videoResolution, backgroundBlur },
         audio: { audioInputDevice, audioOutputDevice },
         meeting: { isAudioEnabled, isVideoEnabled },
         setMeetingPrefs,
@@ -51,16 +51,19 @@ export default function PreMeeting({
 
     const [showPermissionDialog, setShowPermissionDialog] = useState<boolean>(false);
 
-    const constraints: MediaStreamConstraints = {
-        video: {
-            facingMode: "user",
-            width: { ideal: videoResolution.width },
-            height: { ideal: videoResolution.height },
-            frameRate: { ideal: videoFrames, max: 60 },
-            autoGainControl: false,
-            deviceId: videoInputDevice ? { exact: videoInputDevice.deviceId } : undefined
-        },
-    }
+    const constraints: MediaStreamConstraints = useMemo(() => {
+        return {
+            video: {
+                facingMode: "user",
+                width: { exact: videoResolution.width },
+                height: { exact: videoResolution.height },
+                frameRate: { exact: videoFrames },
+                autoGainControl: false,
+                deviceId: videoInputDevice ? { exact: videoInputDevice.deviceId } : undefined,
+                backgroundBlur: backgroundBlur,
+            }
+        }
+    }, [videoResolution, videoFrames, videoInputDevice]);
 
     useEffect(() => {
         // get all available devices
@@ -136,7 +139,6 @@ export default function PreMeeting({
             // permission change event listeners
             if (cameraResult.state == 'prompt') {
                 cameraResult.onchange = () => {
-                    console.log("cameraResult on change", cameraResult.state)
                     if (cameraResult.state === "granted") {
                         initializeDevices({ audio: false, video: true })
                         setShowPermissionDialog(false)
@@ -162,7 +164,7 @@ export default function PreMeeting({
             })
             setVideoStream(null)
         }
-    }, []);
+    }, [session?.user]);
 
 
     useEffect(() => {
@@ -177,10 +179,15 @@ export default function PreMeeting({
                     const stream = await navigator.mediaDevices.getUserMedia(constraints)
                     setVideoStream(stream)
                 } catch (error) {
-                    console.error("Error getting media stream:", error)
-                    toast.error("Media Error", {
-                        description: "Could not access selected devices. Please try different ones.",
-                    })
+                    if (error instanceof Error && error.name === 'OverconstrainedError') {
+                        toast.error("Camera Error", {
+                            description: "The selected camera does not support the selected resolution and frame rate.",
+                        })
+                    } else {
+                        toast.error("Media Error", {
+                            description: "Could not access selected devices. Please try different ones.",
+                        })
+                    }
                     setVideoStream(null)
                     setMeetingPrefs({ isVideoEnabled: false })
                 }
@@ -192,7 +199,7 @@ export default function PreMeeting({
             })
             setVideoStream(null)
         }
-    }, [isVideoEnabled])
+    }, [constraints, isVideoEnabled, setMeetingPrefs])
 
     useEffect(() => {
         if (isAudioEnabled) {
@@ -503,6 +510,8 @@ const VideoControls = ({
         </>
     )
 }
+
+MemoRizedVideo.displayName = "MemoRizedVideo"
 
 
 // Permission Dialog component

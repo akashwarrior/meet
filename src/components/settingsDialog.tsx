@@ -17,7 +17,7 @@ const SettingsDialog = memo(({ showSettings, setShowSettings }: {
 }) => {
     const {
         audio: { audioInputDevice, audioOutputDevice },
-        video: { videoInputDevice, videoResolution, videoCodec, videoFrames },
+        video: { videoInputDevice, videoResolution, videoCodec, videoFrames, backgroundBlur },
         meeting: { isAudioEnabled, isVideoEnabled },
         setAudioPrefs,
         setVideoPrefs,
@@ -31,20 +31,41 @@ const SettingsDialog = memo(({ showSettings, setShowSettings }: {
 
     const codecss = useMemo(() => {
         if (!videoDevices.length) return null
-        return RTCRtpSender.getCapabilities('video')?.codecs
+        const codecs = RTCRtpSender.getCapabilities('video')?.codecs
             .map(codec => codec.mimeType.split('/')[1])
-            .filter((v, i, a) => a.indexOf(v) === i)
+            .filter((v, i, a) => (a.indexOf(v) === i) && ['AV1', 'H264', 'VP8', 'VP9'].includes(v))
+        return codecs
     }, [videoDevices]);
-    const resolutions = useMemo(() => [
+    const [resolutions, setResulution] = useState([
         { width: 3840, height: 2160 },
         { width: 1920, height: 1080 },
         { width: 1280, height: 720 },
         { width: 640, height: 480 },
         { width: 320, height: 240 },
-    ], []);
+    ]);
+    const [frameRates, setFrameRates] = useState([60, 30, 15, 10]);
 
-    const [activeTab, setActiveTab] = useState<"audio" | "video" | "general">("video")
+    const [activeTab, setActiveTab] = useState<"audio" | "video" | "general">("audio")
     const [expandedSection, setExpandedSection] = useState<boolean>(false)
+
+    useEffect(() => {
+        if (isVideoEnabled) {
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    frameRate: { ideal: 60 },
+                    width: { ideal: 3840 },
+                    height: { ideal: 2160 },
+                }
+            }).then((stream) => {
+                const videoTrack = stream.getVideoTracks()[0]
+                const settings = videoTrack.getSettings()
+                setResulution((prev) => prev.filter(res => res.width <= (settings.width || 3840) && res.height <= (settings.height || 2160)))
+                setFrameRates((prev) => prev.filter(fps => fps <= (settings.frameRate || 60)))
+                stream.getTracks().forEach((track) => track.stop())
+            });
+        }
+
+    }, [isVideoEnabled, resolutions])
 
 
     useEffect(() => {
@@ -78,7 +99,7 @@ const SettingsDialog = memo(({ showSettings, setShowSettings }: {
 
     return (
         <Dialog open={showSettings} onOpenChange={setShowSettings}>
-            <DialogContent className="w-3xl! p-0 max-w-full! sm:max-w-4/5! h-11/12 rounded-xl [&>button]:hidden flex flex-col overflow-hidden">
+            <DialogContent className="w-3xl! p-0 max-w-full! sm:max-w-4/5! h-11/12 rounded-xl [&>button]:hidden flex flex-col overflow-hidden outline-none!">
                 <DialogTitle className="flex items-center justify-between py-3 pr-3 pl-4 border-b">
                     <span className="text-xl font-normal ml-3">Settings</span>
                     <DialogClose asChild>
@@ -126,7 +147,7 @@ const SettingsDialog = memo(({ showSettings, setShowSettings }: {
                     </div>
 
                     {/* Right content */}
-                    <div className="p-6 w-full h-full flex-1">
+                    <div className="px-6 py-3 w-full h-full">
                         {/* Audio Settings */}
                         {activeTab === "audio" && (
                             <div className="space-y-7 w-full">
@@ -154,7 +175,7 @@ const SettingsDialog = memo(({ showSettings, setShowSettings }: {
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                                <div className="flex justify-between items-center mb-2">
+                                <div className="flex justify-between items-center mb-2 max-w-11/12">
                                     <h3 className="text-primary font-medium flex">Push to talk</h3>
                                     <Switch
                                         defaultChecked={!!audioDevices.length}
@@ -256,9 +277,10 @@ const SettingsDialog = memo(({ showSettings, setShowSettings }: {
                                 <div className="flex justify-between items-center mb-2 max-w-11/12">
                                     <h3 className="text-[#1a73e8] font-medium">Background Blur</h3>
                                     <Switch
+                                        id="background-blur"
                                         defaultChecked={!!videoDevices.length}
-                                        // checked={adjustVideoLighting}
-                                        // onCheckedChange={setAdjustVideoLighting}
+                                        checked={backgroundBlur}
+                                        onCheckedChange={(val) => setVideoPrefs({ backgroundBlur: val })}
                                         disabled={!videoDevices.length}
                                         className="shadow cursor-pointer"
                                     />
@@ -316,6 +338,32 @@ const SettingsDialog = memo(({ showSettings, setShowSettings }: {
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+
+                                <Label htmlFor="frames" className="font-medium mb-2 text-base text-primary">Video Frames</Label>
+                                <Select
+                                    value={videoFrames.toString()}
+                                    onValueChange={(frames) => {
+                                        setVideoPrefs({ videoFrames: frameRates.find((res) => res === parseInt(frames)) })
+                                    }}
+                                >
+                                    <SelectTrigger id="frames" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                        <SelectValue placeholder="Select Video Frames" />
+                                    </SelectTrigger>
+                                    <SelectContent align="start" >
+                                        <SelectGroup>
+                                            {frameRates.map((frames) => (
+                                                <SelectItem
+                                                    key={frames}
+                                                    value={frames.toString()}
+                                                    className="p-2.5 bg-background cursor-pointer"
+                                                >
+                                                    {frames + ' fps'}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+
                             </div>
                         )}
 

@@ -1,6 +1,5 @@
 'use client'
 
-import dynamic from "next/dynamic"
 import PreMeeting from "@/components/preMeeting"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -9,6 +8,7 @@ import useParticipantStore from "@/store/participant"
 import useStreamTrackstore from "@/store/streamTrack"
 import useMeetingPrefsStore from "@/store/meetingPrefs"
 
+import dynamic from "next/dynamic"
 const MeetingFooter = dynamic(() => import("@/components/meetingFooter"), { ssr: false })
 const MeetingHeader = dynamic(() => import("@/components/meetingHeader"), { ssr: false })
 const VideoGrid = dynamic(() => import("@/components/videoGrid"), { ssr: false })
