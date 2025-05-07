@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogTitle } from "./ui/dialog"
 import { ChevronDown, EllipsisVertical, Mic, MicOff, Video, VideoOff, Volume2 } from "lucide-react"
 import useMeetingPrefsStore from "@/store/meetingPrefs"
 import SettingsDialog from "./settingsDialog"
+import { useGetMediaDevices } from "@/hooks/useGetMediaDevices"
 
 const loadFeatures = () => import("@/components/domAnimation").then(res => res.default)
 const DropdownMenu = dynamic(() => import("@/components/ui/dropdown-menu").then((mod) => mod.DropdownMenu), { ssr: false })
@@ -26,19 +27,16 @@ export default function PreMeeting({
     setIsLoading,
     setName,
 }: {
-    isLoading: boolean,
-    setIsLoading: (isLoading: boolean) => void,
+    isLoading: "Loading" | "Connected" | "Disconnected",
+    setIsLoading: (isLoading: "Loading" | "Connected" | "Disconnected") => void,
     setName: (name: string) => void,
 }) {
     const { data: session } = useSession()
-    const nameRef = useRef<HTMLInputElement>(null)
+    const { audioDevices, videoDevices, speakerDevices } = useGetMediaDevices();
 
-    const audioInputDevicesRef = useRef<MediaDeviceInfo[]>([])
-    const audioOutputDevicesRef = useRef<MediaDeviceInfo[]>([])
-    const videoInputDevicesRef = useRef<MediaDeviceInfo[]>([])
     const timeOutRef = useRef<NodeJS.Timeout | null>(null)
     const [videoStream, setVideoStream] = useState<MediaStream | null>(null)
-    const [showSettings, setShowSettings] = useState(false)
+    const nameRef = useRef<HTMLInputElement>(null)
 
     const {
         video: { videoInputDevice, videoFrames, videoResolution, backgroundBlur },
@@ -51,111 +49,28 @@ export default function PreMeeting({
 
     const [showPermissionDialog, setShowPermissionDialog] = useState<boolean>(false);
 
-    const constraints: MediaStreamConstraints = useMemo(() => {
-        return {
-            video: {
-                facingMode: "user",
-                width: { exact: videoResolution.width },
-                height: { exact: videoResolution.height },
-                frameRate: { exact: videoFrames },
-                autoGainControl: false,
-                deviceId: videoInputDevice ? { exact: videoInputDevice.deviceId } : undefined,
-                backgroundBlur: backgroundBlur,
-            }
+    const constraints: MediaStreamConstraints = useMemo(() => ({
+        video: {
+            facingMode: "user",
+            width: { exact: videoResolution.width },
+            height: { exact: videoResolution.height },
+            frameRate: { exact: videoFrames },
+            autoGainControl: false,
+            deviceId: videoInputDevice ? { exact: videoInputDevice.deviceId } : undefined,
+            backgroundBlur: backgroundBlur,
         }
-    }, [videoResolution, videoFrames, videoInputDevice]);
+    }), [videoResolution, videoFrames, videoInputDevice]);
 
     useEffect(() => {
-        // get all available devices
-        const initializeDevices = ({ audio, video }: { audio: boolean, video: boolean }) => {
-            navigator.mediaDevices.enumerateDevices()
-                .then((devices) => {
-                    devices.forEach((device) => {
-                        if (!device.deviceId) return;
-                        switch (device.kind) {
-                            case "audioinput":
-                                if (audio) {
-                                    audioInputDevicesRef.current.push(device);
-                                }
-                                break;
-                            case "audiooutput":
-                                if (audio) {
-                                    audioOutputDevicesRef.current.push(device);
-                                }
-                                break;
-                            case "videoinput":
-                                if (video) {
-                                    videoInputDevicesRef.current.push(device);
-                                }
-                                break;
-                        }
-                    });
+        if (timeOutRef.current) clearTimeout(timeOutRef.current)
+        timeOutRef.current = setTimeout(() => {
+            setShowPermissionDialog(!audioDevices.length && !videoDevices.length);
+            timeOutRef.current = null
+        }, 100);
+    }, [audioDevices, videoDevices])
 
-                    if (audioInputDevicesRef.current.length || audioOutputDevicesRef.current.length) {
-                        setAudioPrefs({ audioInputDevice: audioInputDevicesRef.current[0], audioOutputDevice: audioOutputDevicesRef.current[0] })
-                    }
-                    if (videoInputDevicesRef.current.length) {
-                        setVideoPrefs({ videoInputDevice: videoInputDevicesRef.current[0] })
-                    }
-                }).catch((err) => {
-                    if (err instanceof Error && err.name === 'NotAllowedError') {
-                        toast.error("Permission Denied", {
-                            description: "Please allow access to your camera and microphone.",
-                        });
-                    } else {
-                        toast.error("Error", {
-                            description: "Could not access your camera and microphone.",
-                        });
-                    }
-                })
-        }
-
+    useEffect(() => {
         setName(session?.user?.name || "");
-
-        // Check for permissions and initialize devices
-        (async () => {
-            let showDialog = false;
-            const cameraResult = await navigator.permissions.query({ name: "camera" })
-            if (cameraResult.state === "granted" && !videoInputDevicesRef.current.length) {
-                showDialog = false
-                initializeDevices({ audio: false, video: true })
-            } else if (cameraResult.state === "prompt") {
-                showDialog = true
-            }
-
-            const micResult = await navigator.permissions.query({ name: "microphone" });
-            if (micResult.state === "granted" && !audioInputDevicesRef.current.length) {
-                showDialog = false
-                initializeDevices({ audio: true, video: false })
-            } else if (micResult.state === "prompt") {
-                showDialog = showDialog || false
-            }
-
-
-            if (showDialog) {
-                setShowPermissionDialog(showDialog);
-            }
-
-            // permission change event listeners
-            if (cameraResult.state == 'prompt') {
-                cameraResult.onchange = () => {
-                    if (cameraResult.state === "granted") {
-                        initializeDevices({ audio: false, video: true })
-                        setShowPermissionDialog(false)
-                    }
-                }
-            }
-
-            if (micResult.state == 'prompt') {
-                micResult.onchange = () => {
-                    if (micResult.state === "granted") {
-                        initializeDevices({ audio: true, video: false })
-                        setShowPermissionDialog(false)
-                    }
-                }
-            }
-
-        })()
 
         return () => {
             videoStream?.getTracks().forEach((track) => {
@@ -169,25 +84,17 @@ export default function PreMeeting({
 
     useEffect(() => {
         if (isVideoEnabled) {
+            // debouncing the video stream for better performance
             if (timeOutRef.current) clearTimeout(timeOutRef.current)
             timeOutRef.current = setTimeout(async () => {
                 try {
-                    videoStream?.getTracks().forEach((track) => {
-                        track.stop()
-                        videoStream?.removeTrack(track)
-                    });
                     const stream = await navigator.mediaDevices.getUserMedia(constraints)
                     setVideoStream(stream)
                 } catch (error) {
-                    if (error instanceof Error && error.name === 'OverconstrainedError') {
-                        toast.error("Camera Error", {
-                            description: "The selected camera does not support the selected resolution and frame rate.",
-                        })
-                    } else {
-                        toast.error("Media Error", {
-                            description: "Could not access selected devices. Please try different ones.",
-                        })
-                    }
+                    console.error("Error getting media stream:", error)
+                    toast.error("Media Error", {
+                        description: "Could not access selected devices. Please try different ones.",
+                    })
                     setVideoStream(null)
                     setMeetingPrefs({ isVideoEnabled: false })
                 }
@@ -199,12 +106,23 @@ export default function PreMeeting({
             })
             setVideoStream(null)
         }
+
+        return () => {
+            if (timeOutRef.current) clearTimeout(timeOutRef.current)
+            videoStream?.getTracks().forEach((track) => {
+                track.stop()
+                videoStream?.removeTrack(track)
+            })
+            setVideoStream(null)
+        }
     }, [constraints, isVideoEnabled, setMeetingPrefs])
+
+
 
     useEffect(() => {
         if (isAudioEnabled) {
             try {
-                if (!audioInputDevicesRef.current.length) {
+                if (!audioDevices.length) {
                     navigator.mediaDevices.getUserMedia({ audio: true })
                         .then((stream) => {
                             stream.getTracks().forEach((track) => {
@@ -240,8 +158,9 @@ export default function PreMeeting({
             return
         }
         setName(nameRef.current?.value.trim())
-        setIsLoading(false)
+        setIsLoading("Loading")
     }
+
 
     return (
         <LazyMotion features={loadFeatures}>
@@ -264,7 +183,6 @@ export default function PreMeeting({
                                 isAudioEnabled={isAudioEnabled}
                                 isVideoEnabled={isVideoEnabled}
                                 setMeetingPrefs={setMeetingPrefs}
-                                setShowSettings={setShowSettings}
                             />
                         </div>
 
@@ -275,7 +193,7 @@ export default function PreMeeting({
                                     <Button
                                         variant="outline"
                                         className="rounded-full flex items-center gap-3 px-4! focus-visible:ring-0 flex-1 max-w-1/4 border-0 hover:border hover:bg-primary/10! duration-200 shadow-none"
-                                        disabled={!audioInputDevicesRef.current.length}
+                                        disabled={!audioDevices.length}
                                     >
                                         <Mic />
                                         <motion.span
@@ -301,7 +219,7 @@ export default function PreMeeting({
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         className="w-full h-full bg-background overflow-hidden"
-                                    >{audioInputDevicesRef.current.map((device) =>
+                                    >{audioDevices.map((device) =>
                                         <DropdownMenuItem
                                             key={device.deviceId}
                                             onClick={() => setAudioPrefs({ audioInputDevice: device })}
@@ -320,7 +238,7 @@ export default function PreMeeting({
                                     <Button
                                         variant="outline"
                                         className="rounded-full flex items-center gap-3 px-4! focus-visible:ring-0 flex-1 max-w-1/4 border-0 hover:border hover:bg-primary/10! duration-200 shadow-none"
-                                        disabled={!audioOutputDevicesRef.current.length}
+                                        disabled={!speakerDevices.length}
                                     >
                                         <Volume2 />
                                         <motion.span
@@ -346,7 +264,7 @@ export default function PreMeeting({
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         className="w-full h-full bg-background overflow-hidden"
-                                    >{audioOutputDevicesRef.current.map((device) =>
+                                    >{speakerDevices.map((device) =>
                                         <DropdownMenuItem
                                             key={device.deviceId}
                                             onClick={() => setAudioPrefs({ audioOutputDevice: device })}
@@ -364,7 +282,7 @@ export default function PreMeeting({
                                     <Button
                                         variant="outline"
                                         className="rounded-full flex items-center gap-3 px-4! focus-visible:ring-0 flex-1 max-w-1/4 border-0 hover:border hover:bg-primary/10! duration-200 shadow-none"
-                                        disabled={!videoInputDevicesRef.current.length}
+                                        disabled={!videoDevices.length}
                                     >
                                         <Video />
                                         <motion.span
@@ -390,7 +308,7 @@ export default function PreMeeting({
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         className="w-full h-full bg-background overflow-hidden"
-                                    >{videoInputDevicesRef.current.map((device) =>
+                                    >{videoDevices.map((device) =>
                                         <DropdownMenuItem
                                             key={device.deviceId}
                                             onClick={() => setVideoPrefs({ videoInputDevice: device })}
@@ -413,7 +331,7 @@ export default function PreMeeting({
                             placeholder="Your name"
                             ref={nameRef}
                             defaultValue={session?.user?.name || ""}
-                            disabled={!isLoading}
+                            disabled={isLoading === 'Loading'}
                             className="border rounded-md h-full bg-background focus-visible:ring-2 focus-visible:ring-primary transition-all duration-200 p-4.5 md:text-base"
                         />
 
@@ -421,21 +339,15 @@ export default function PreMeeting({
                             variant="default"
                             className="text-base font-bold rounded-full px-16 py-7 mt-2"
                             onClick={joinMeeting}
-                            disabled={!isLoading}
+                            disabled={isLoading === "Loading"}
                         >
-                            {!isLoading ? "Joining..." : "Join Meeting"}
+                            {isLoading === 'Loading' ? "Joining..." : "Join Meeting"}
                         </Button>
                     </div>
                 </main>
 
-                {/* Settings Dialog */}
-                <SettingsDialog
-                    showSettings={showSettings}
-                    setShowSettings={setShowSettings}
-                />
-
                 {/* Permission Dialog */}
-                {showPermissionDialog && (!isAudioEnabled && !isVideoEnabled) &&
+                {showPermissionDialog &&
                     <PermissionDialog
                         showPermissionDialog={showPermissionDialog}
                         setShowPermissionDialog={setShowPermissionDialog}
@@ -468,12 +380,10 @@ const VideoControls = ({
     isAudioEnabled,
     isVideoEnabled,
     setMeetingPrefs,
-    setShowSettings
 }: {
     isAudioEnabled: boolean,
     isVideoEnabled: boolean,
     setMeetingPrefs: (prefs: { isAudioEnabled?: boolean, isVideoEnabled?: boolean }) => void,
-    setShowSettings: (showSettings: boolean) => void
 }) => {
     const [rendered, setRendered] = useState(false)
     useEffect(() => setRendered(true), [])
@@ -498,14 +408,15 @@ const VideoControls = ({
             </div>
 
             <div className="absolute top-0 left-0 right-0 flex bg-gradient-to-b from-black/50 to-transparent p-3 justify-end items-center">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowSettings(true)}
-                    className="rounded-full text-white hover:bg-primary/50"
-                >
-                    <EllipsisVertical className="w-5! h-5!" />
-                </Button>
+                <SettingsDialog>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full text-white hover:bg-primary/50"
+                    >
+                        <EllipsisVertical className="w-5! h-5!" />
+                    </Button>
+                </SettingsDialog>
             </div>
         </>
     )
@@ -525,7 +436,6 @@ const PermissionDialog = ({
     setShowPermissionDialog: (showPermissionDialog: boolean) => void
     setMeetingPrefs: (prefs: { isAudioEnabled?: boolean, isVideoEnabled?: boolean }) => void
 }) => {
-
     const [isCollapsed, setIsCollapsed] = useState(false)
 
     return (
@@ -553,12 +463,12 @@ const PermissionDialog = ({
                         onClick={() => {
                             navigator.mediaDevices.getUserMedia({ audio: true, video: true })
                                 .then((stream) => {
+                                    setShowPermissionDialog(false)
                                     stream.getTracks().forEach((track) => {
                                         track.stop()
                                         stream.removeTrack(track)
                                     })
                                     setMeetingPrefs({ isAudioEnabled: true, isVideoEnabled: true })
-                                    setShowPermissionDialog(false)
                                 })
                                 .catch((error) => {
                                     console.error("Error getting media stream:", error)
@@ -593,12 +503,12 @@ const PermissionDialog = ({
                             onClick={() => {
                                 navigator.mediaDevices.getUserMedia({ audio: true })
                                     .then((stream) => {
+                                        setShowPermissionDialog(false)
                                         stream.getTracks().forEach((track) => {
                                             track.stop()
                                             stream.removeTrack(track)
                                         })
                                         setMeetingPrefs({ isAudioEnabled: true })
-                                        setShowPermissionDialog(false)
                                     })
                                     .catch((error) => {
                                         console.error("Error getting media stream:", error)
@@ -617,12 +527,12 @@ const PermissionDialog = ({
                             onClick={() => {
                                 navigator.mediaDevices.getUserMedia({ video: true })
                                     .then((stream) => {
+                                        setShowPermissionDialog(false)
                                         stream.getTracks().forEach((track) => {
                                             track.stop()
                                             stream.removeTrack(track)
                                         })
                                         setMeetingPrefs({ isVideoEnabled: true })
-                                        setShowPermissionDialog(false)
                                     })
                                     .catch((error) => {
                                         console.error("Error getting media stream:", error)

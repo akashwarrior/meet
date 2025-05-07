@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export type Codecs = 'vp8' | 'h264' | 'vp9' | 'av1';
+
 interface VideoPrefs {
     videoInputDevice: MediaDeviceInfo | null;
     videoResolution: {
@@ -8,7 +10,7 @@ interface VideoPrefs {
         height: number;
     };
     videoFrames: number;
-    videoCodec: string;
+    videoCodec: Codecs;
     backgroundBlur: boolean;
 }
 
@@ -32,24 +34,23 @@ interface MeetingPrefsState {
 }
 
 
-const defaultVideoPrefs: VideoPrefs = {
-    videoInputDevice: null,
-    videoResolution: { width: 1920, height: 1080 },
-    videoFrames: 30,
-    videoCodec: "VP8",
-    backgroundBlur: false,
-};
-
-const defaultAudioPrefs: AudioPrefs = {
-    audioInputDevice: null,
-    audioOutputDevice: null,
-};
-
 const useMeetingPrefsStore = create<MeetingPrefsState>()(
     persist(
         (set) => ({
-            video: defaultVideoPrefs,
-            audio: defaultAudioPrefs,
+            video: {
+                videoInputDevice: null,
+                videoResolution: {
+                    width: 3840,
+                    height: 2160,
+                },
+                videoFrames: 60,
+                videoCodec: 'vp8',
+                backgroundBlur: false,
+            },
+            audio: {
+                audioInputDevice: null,
+                audioOutputDevice: null,
+            },
             meeting: {
                 isVideoEnabled: false,
                 isAudioEnabled: false,
@@ -57,26 +58,17 @@ const useMeetingPrefsStore = create<MeetingPrefsState>()(
 
             setVideoPrefs: (videoPrefs) =>
                 set((state) => ({
-                    video: {
-                        ...(state.video ?? defaultVideoPrefs),
-                        ...videoPrefs,
-                    },
+                    video: { ...(state.video), ...videoPrefs },
                 })),
 
             setAudioPrefs: (audioPrefs) =>
                 set((state) => ({
-                    audio: {
-                        ...(state.audio ?? defaultAudioPrefs),
-                        ...audioPrefs,
-                    },
+                    audio: { ...(state.audio), ...audioPrefs },
                 })),
 
             setMeetingPrefs: (meetingPrefs) =>
                 set((state) => ({
-                    meeting: {
-                        ...state.meeting,
-                        ...meetingPrefs,
-                    },
+                    meeting: { ...state.meeting, ...meetingPrefs },
                 })),
         }),
         {

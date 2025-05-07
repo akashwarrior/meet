@@ -59,11 +59,13 @@ const VideoGrid = memo(() => {
                     layout
                 >
                     {currentParticipants.map(
-                        (participant) =>
+                        ({ sid, name }) =>
                             <Participant
-                                key={participant.id}
-                                myId={participants[0].id}
-                                participant={participant}
+                                key={sid}
+                                participant={{
+                                    id: sid,
+                                    name: name || "Unknown",
+                                }}
                             />
                     )}
                 </motion.div>

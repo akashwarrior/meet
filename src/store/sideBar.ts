@@ -1,17 +1,13 @@
 import { create } from "zustand"
 
 interface SidebarOpenStore {
-    sidebarOpen: boolean
-    activeTab: string
-    setSidebarOpen: (open: boolean) => void
-    setActiveTab: (tab: string) => void
+    sidebarOpen: "participants" | "chat" | null
+    setSidebarOpen: (open: "participants" | "chat" | null) => void
 }
 
 const useSidebarOpenStore = create<SidebarOpenStore>()((set) => ({
-    sidebarOpen: false,
-    activeTab: "participants",
+    sidebarOpen: null,
     setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
-    setActiveTab: (activeTab) => set({ activeTab })
 }))
 
 export default useSidebarOpenStore
