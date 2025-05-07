@@ -1,14 +1,9 @@
 import { create } from 'zustand'
 
-interface Participant {
-    id: string
-    name: string
-}
-
 interface ParticipantStore {
-    participants: Participant[]
-    addParticipant: (participant: Participant) => void
-    removeParticipant: (id: string) => void
+    participants: { sid: string, name?: string }[]
+    addParticipant: ({ sid, name }: { sid: string, name?: string }) => void
+    removeParticipant: ({ sid }: { sid: string }) => void
 }
 
 const useParticipantStore = create<ParticipantStore>()((set) => ({
@@ -18,7 +13,7 @@ const useParticipantStore = create<ParticipantStore>()((set) => ({
     addParticipant: (participant) => set((state) => ({
         participants: [...state.participants, participant]
     })),
-    removeParticipant: (id) => set((state) => ({ participants: state.participants.filter((p) => p.id !== id) })),
+    removeParticipant: ({ sid }) => set((state) => ({ participants: state.participants.filter((p) => p.sid !== sid) })),
 }))
 
 export default useParticipantStore;

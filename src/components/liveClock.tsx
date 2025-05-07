@@ -32,7 +32,7 @@ export default function LiveClock() {
                 className="flex items-center gap-1 text-muted-foreground"
             >
                 {time.toLocaleTimeString("en-IN", { hour12: false, hour: "2-digit", minute: "2-digit" })}
-                <span className="hidden md:inline">
+                <span className="hidden sm:inline">
                     {" • "}
                     {time.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
                 </span>

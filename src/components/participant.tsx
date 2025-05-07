@@ -9,16 +9,15 @@ import useStreamTrackstore from "@/store/streamTrack"
 
 const loadFeatures = () => import("@/components/domAnimation").then(res => res.default)
 
-const Participant = memo(({ participant: { name, id }, myId }: {
+const Participant = memo(({ participant: { name, id } }: {
     participant: {
         id: string
         name: string
     },
-    myId: string
 }) => {
 
-    const audioTrack = useStreamTrackstore((state) => state.audioTracks.find((track) => track.id === id)?.track)
-    const videoTrack = useStreamTrackstore((state) => state.videoTracks.find((track) => track.id === id)?.track)
+    const audioTrack = useStreamTrackstore((state) => state.audioTracks.find(({ sid }) => sid === id)?.track)
+    const videoTrack = useStreamTrackstore((state) => state.videoTracks.find(({ sid }) => sid === id)?.track)
 
     return (
         <LazyMotion features={loadFeatures}>
@@ -34,6 +33,7 @@ const Participant = memo(({ participant: { name, id }, myId }: {
                 <video
                     autoPlay
                     playsInline
+                    muted
                     className={`rounded-md w-full h-full max-w-full max-h-full object-contain -scale-x-100 ${!videoTrack && "hidden"} z-10`}
                     ref={(video) => {
                         if (video) {
@@ -42,7 +42,7 @@ const Participant = memo(({ participant: { name, id }, myId }: {
                                 stream.addTrack(videoTrack)
                             }
 
-                            if (id !== myId && audioTrack) {
+                            if (audioTrack) {
                                 stream.addTrack(audioTrack)
                             }
 
@@ -52,6 +52,9 @@ const Participant = memo(({ participant: { name, id }, myId }: {
                                     video.play().catch((error) => {
                                         console.error("Error playing video:", error)
                                     });
+                                }
+                                if (video.muted) {
+                                    video.muted = false
                                 }
                             }
                         }

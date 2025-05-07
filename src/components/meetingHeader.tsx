@@ -1,11 +1,9 @@
 'use client';
 
 import { toast } from "sonner";
-import { memo, useEffect, useState } from "react";
+import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Users, Info, UserPlus, Copy, Shield } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { WebRTCService } from "@/lib/webrtc-service";
+import { Info, UserPlus, Copy, Shield } from "lucide-react"
 import { Input } from "./ui/input";
 import ThemeToggle from "@/components/theme-toggle"
 
@@ -27,16 +25,16 @@ import {
 } from "./ui/dialog";
 
 
-interface WaitingParticipant {
-    id: string
-    name: string
-    joinTime: string
-}
+// interface WaitingParticipant {
+//     id: string
+//     name: string
+//     joinTime: string
+// }
 
-const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service: WebRTCService }) => {
+const MeetingHeader = memo(({ meetingId }: { meetingId: string }) => {
     const [showInviteDialog, setShowInviteDialog] = useState(false)
-    const [waitingParticipants, setWaitingParticipants] = useState<WaitingParticipant[]>([])
-    const [showWaitingRoom, setShowWaitingRoom] = useState(false)
+    // const [waitingParticipants, setWaitingParticipants] = useState<WaitingParticipant[]>([])
+    // const [showWaitingRoom, setShowWaitingRoom] = useState(false)
 
     // Copy meeting link
     const copyMeetingLink = () => {
@@ -48,45 +46,45 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
         })
     }
 
-    useEffect(() => {
-        service.onUserRequest(({ name, sender }) => {
-            setWaitingParticipants((prev) => {
-                return [...prev, { id: sender, name, joinTime: new Date().toLocaleTimeString() }]
-            });
-        })
+    // useEffect(() => {
+    //     service.onUserRequest(({ name, sender }) => {
+    //         setWaitingParticipants((prev) => {
+    //             return [...prev, { id: sender, name, joinTime: new Date().toLocaleTimeString() }]
+    //         });
+    //     })
 
-        service.onParticipantLeave((sender) => {
-            setWaitingParticipants((prev) => prev.filter((p) => p.id !== sender))
-        });
-    }, [service])
+    //     service.onParticipantLeave((sender) => {
+    //         setWaitingParticipants((prev) => prev.filter((p) => p.id !== sender))
+    //     });
+    // }, [service]);
 
 
-    // Add participant admission functions
-    const admit = (participantId: string) => {
-        const waitingParticipant = waitingParticipants.find((p) => p.id === participantId)
-        if (waitingParticipant) {
-            service.acceptRequest(participantId)
-            setWaitingParticipants((prev) => prev.filter((p) => p.id !== participantId))
+    // // Add participant admission functions
+    // const admit = (participantId: string) => {
+    //     const waitingParticipant = waitingParticipants.find((p) => p.id === participantId)
+    //     if (waitingParticipant) {
+    //         service.acceptRequest(participantId)
+    //         setWaitingParticipants((prev) => prev.filter((p) => p.id !== participantId))
 
-            toast.success("Participant admitted", {
-                description: `${waitingParticipant.name} has been admitted to the meeting`,
-                duration: 1500,
-            })
-        }
-    }
+    //         toast.success("Participant admitted", {
+    //             description: `${waitingParticipant.name} has been admitted to the meeting`,
+    //             duration: 1500,
+    //         })
+    //     }
+    // }
 
-    const rejectParticipant = (participantId: string) => {
-        const waitingParticipant = waitingParticipants.find((p) => p.id === participantId)
-        if (waitingParticipant) {
-            service.rejectRequest(participantId)
-            setWaitingParticipants((prev) => prev.filter((p) => p.id !== participantId))
+    // const rejectParticipant = (participantId: string) => {
+    //     const waitingParticipant = waitingParticipants.find((p) => p.id === participantId)
+    //     if (waitingParticipant) {
+    //         service.rejectRequest(participantId)
+    //         setWaitingParticipants((prev) => prev.filter((p) => p.id !== participantId))
 
-            toast.success("Participant rejected", {
-                description: `${waitingParticipant.name} has been denied access to the meeting`,
-                duration: 2000,
-            })
-        }
-    }
+    //         toast.success("Participant rejected", {
+    //             description: `${waitingParticipant.name} has been denied access to the meeting`,
+    //             duration: 2000,
+    //         })
+    //     }
+    // }
 
     return (
         <header className="border-b border-border px-4 py-2 flex items-center justify-between">
@@ -98,7 +96,7 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
             </div>
             <div className="flex items-center">
                 <ThemeToggle />
-                {waitingParticipants.length > 0 && (
+                {/* {waitingParticipants.length > 0 && (
                     <Button variant="outline" size="sm" className="relative ml-2" onClick={() => setShowWaitingRoom(true)}>
                         <Users className="h-4 w-4 mr-1" />
                         Waiting
@@ -106,7 +104,7 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
                             {waitingParticipants.length}
                         </span>
                     </Button>
-                )}
+                )} */}
 
                 <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
                     <DialogTrigger asChild>
@@ -162,7 +160,7 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
             </div>
 
             {/* Waiting Room Dialog */}
-            <Dialog open={showWaitingRoom} onOpenChange={setShowWaitingRoom}>
+            {/* <Dialog open={showWaitingRoom} onOpenChange={setShowWaitingRoom}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Waiting Room</DialogTitle>
@@ -208,7 +206,7 @@ const MeetingHeader = memo(({ meetingId, service }: { meetingId: string, service
                         )}
                     </div>
                 </DialogContent>
-            </Dialog>
+            </Dialog> */}
         </header>
     )
 });

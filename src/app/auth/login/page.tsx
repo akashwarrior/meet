@@ -22,26 +22,30 @@ export default function Login() {
         const email = emailRef.current?.value || ""
         const password = passwordRef.current?.value || ""
         setLoading(true)
-        const res = await signIn("Login", {
-            email,
-            password,
-            redirect: false,
-        });
+        try {
+            const res = await signIn("Login", {
+                email,
+                password,
+                redirect: false,
+            });
 
-        if (res?.ok) {
-            toast.success("Login successful")
-            router.back()
-        } else {
-            if (res?.error) {
-                toast.error(res.error, {
-                    description: "Please check your credentials and try again",
-                })
+            if (res?.ok) {
+                toast.success("Login successful")
+                router.back()
             } else {
-                toast.error("Something went wrong", {
-                    description: "Please try again later",
-                })
+                if (res?.error) {
+                    toast.error(res.error, {
+                        description: "Please check your credentials and try again",
+                    })
+                } else {
+                    toast.error("Something went wrong", {
+                        description: "Please try again later",
+                    })
+                }
+                setLoading(false);
             }
-            setLoading(false)
+        } catch (error) {
+            console.log("Error during login:", error)
         }
     }
 
