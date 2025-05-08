@@ -59,7 +59,7 @@ export default function PreMeeting({
             deviceId: videoInputDevice ? { exact: videoInputDevice.deviceId } : undefined,
             backgroundBlur: backgroundBlur,
         }
-    }), [videoResolution, videoFrames, videoInputDevice]);
+    }), [videoResolution, videoFrames, videoInputDevice, backgroundBlur]);
 
     useEffect(() => {
         if (timeOutRef.current) clearTimeout(timeOutRef.current)
@@ -71,20 +71,11 @@ export default function PreMeeting({
 
     useEffect(() => {
         setName(session?.user?.name || "");
-
-        return () => {
-            videoStream?.getTracks().forEach((track) => {
-                track.stop()
-                videoStream?.removeTrack(track)
-            })
-            setVideoStream(null)
-        }
-    }, [session?.user]);
+    }, [session?.user, setName]);
 
 
     useEffect(() => {
         if (isVideoEnabled) {
-            // debouncing the video stream for better performance
             if (timeOutRef.current) clearTimeout(timeOutRef.current)
             timeOutRef.current = setTimeout(async () => {
                 try {
@@ -145,7 +136,7 @@ export default function PreMeeting({
             }
 
         }
-    }, [isAudioEnabled])
+    }, [isAudioEnabled, audioDevices.length])
 
 
 

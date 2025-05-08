@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     try {
         if (!session?.user) {
             console.error("No session found", session);
-            throw new Error("No user ID provided", { cause: ERROR_CAUSE });
+            throw new Error("Please login to create a meeting", { cause: ERROR_CAUSE });
         }
 
         const hostId = (await prisma.user.findUnique({

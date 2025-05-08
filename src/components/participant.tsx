@@ -2,69 +2,50 @@
 
 import { memo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { MicOff } from "lucide-react"
+import { Mic, MicOff } from "lucide-react"
 import * as motion from "motion/react-m"
 import { LazyMotion } from "motion/react"
-import useStreamTrackstore from "@/store/streamTrack"
+import { TrackReference, useParticipantTracks } from "@livekit/components-react";
+import { Track } from "livekit-client";
 
 const loadFeatures = () => import("@/components/domAnimation").then(res => res.default)
 
-const Participant = memo(({ participant: { name, id } }: {
-    participant: {
-        id: string
-        name: string
-    },
-}) => {
+const Participant = memo(({ identity, userName }: { identity: string, userName: string }) => {
 
-    const audioTrack = useStreamTrackstore((state) => state.audioTracks.find(({ sid }) => sid === id)?.track)
-    const videoTrack = useStreamTrackstore((state) => state.videoTracks.find(({ sid }) => sid === id)?.track)
+    const tracks = useParticipantTracks([Track.Source.Microphone, Track.Source.Camera], identity);
+    const audioTrack = tracks.find((val: TrackReference) => val.source === Track.Source.Microphone)?.publication?.track;
+    const videoStream = tracks.find((val: TrackReference) => val.source === Track.Source.Camera)?.publication?.track;
+
+    const IsVideoOn = (videoStream ? !videoStream?.isMuted : false)
+    const IsAudioOn = (audioTrack ? !audioTrack?.isMuted : false)
 
     return (
         <LazyMotion features={loadFeatures}>
             <motion.div
-                key={id}
+                key={identity}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 layout
-                className={`${videoTrack ? "w-fit h-fit bg-transparent" : "w-full h-full"} bg-background overflow-hidden m-auto max-w-full max-h-full relative`}
+                className={`${IsVideoOn ? "w-fit h-fit bg-transparent" : "w-full h-full"} bg-background overflow-hidden m-auto max-w-full max-h-full relative`}
             >
                 <video
                     autoPlay
                     playsInline
                     muted
-                    className={`rounded-md w-full h-full max-w-full max-h-full object-contain -scale-x-100 ${!videoTrack && "hidden"} z-10`}
+                    className={`rounded-md w-full h-full max-w-full max-h-full object-contain -scale-x-100 ${!IsVideoOn && "hidden"} z-10`}
                     ref={(video) => {
                         if (video) {
-                            const stream = new MediaStream()
-                            if (videoTrack) {
-                                stream.addTrack(videoTrack)
-                            }
-
-                            if (audioTrack) {
-                                stream.addTrack(audioTrack)
-                            }
-
-                            if (stream.getTracks().length > 0) {
-                                video.srcObject = stream
-                                if (!video.played) {
-                                    video.play().catch((error) => {
-                                        console.error("Error playing video:", error)
-                                    });
-                                }
-                                if (video.muted) {
-                                    video.muted = false
-                                }
-                            }
+                            video.srcObject = IsVideoOn ? videoStream?.mediaStream : null
                         }
                     }}
                 />
 
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between z-20">
-                    <div className="bg-background/80 backdrop-blur-sm rounded-md px-2 py-1 text-xs flex items-center gap-1">
-                        {!audioTrack && <MicOff className="h-3 w-3" />}
-                        <span>{name}</span>
+                    <div className="bg-background/80 backdrop-blur-sm rounded-md px-2 py-1 text-xs flex items-center gap-2">
+                        {IsAudioOn ? <Mic className="w-3" /> : <MicOff className="w-3" />}
+                        <span>{userName}</span>
                     </div>
                 </div>
 
@@ -98,7 +79,7 @@ const Participant = memo(({ participant: { name, id } }: {
                 </div>}
             </div> */}
 
-                {!videoTrack && (
+                {!IsVideoOn && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -127,7 +108,7 @@ const Participant = memo(({ participant: { name, id } }: {
                                 className="w-1/2 m-auto"
                                 src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${name}`}
                             />
-                            <AvatarFallback className="bg-transparent">{name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="bg-transparent">{userName.charAt(0)}</AvatarFallback>
                         </Avatar>
                     </motion.div>
                 )}

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, MouseEvent } from "react";
+import { useState, useEffect, MouseEvent, useImperativeHandle } from "react";
 
 const DURATION = 2000;
 
-export default function RippleEffect({ isWhite }: { isWhite: boolean }) {
+export default function RippleEffect({ isWhite, ref }: { isWhite: boolean, ref: React.RefObject<{ addRipple: (event: MouseEvent<HTMLButtonElement>) => void } | null> }) {
     const [rippleArray, setRippleArray] = useState<{
         x: number;
         y: number;
@@ -28,31 +28,31 @@ export default function RippleEffect({ isWhite }: { isWhite: boolean }) {
         }
     }, [rippleArray])
 
+    useImperativeHandle(ref, () => ({
+        addRipple: (event: MouseEvent<HTMLButtonElement>) => {
+            const { width, height, x: rippleX, y: RippleY } = event.currentTarget.getBoundingClientRect();
+            const size = (width > height ? width : height) / 2;
+            const x = event.pageX - rippleX - size / 2;
+            const y = event.pageY - RippleY - size / 2;
 
-    const addRipple = (event: MouseEvent<HTMLDivElement>) => {
-        const { width, height, x: rippleX, y: RippleY } = event.currentTarget.getBoundingClientRect();
-        const size = width > height ? width : height;
-        const x = event.pageX - rippleX - size / 2;
-        const y = event.pageY - RippleY - size / 2;
-
-        setRippleArray([...rippleArray, { x, y, size }]);
-    };
+            setRippleArray([...rippleArray, { x, y, size }]);
+        },
+    }));
 
     return (
-        <div className="absolute top-0 bottom-0 left-0 right-0" onClick={addRipple}>
-            {rippleArray.length > 0 &&
-                rippleArray.map((ripple, index) =>
-                    <span
-                        key={"span" + index}
-                        className={`scale-50 rounded-full absolute animate-ripple ${isWhite ? "bg-primary/20 dark:bg-primary/50" : "bg-white/20"}`}
-                        style={{
-                            top: ripple.y,
-                            left: ripple.x,
-                            width: ripple.size,
-                            height: ripple.size
-                        }}
-                    />
-                )}
-        </div>
+        <>
+            {rippleArray.map((ripple, index) =>
+                <span
+                    key={"span" + index}
+                    className={`rounded-full absolute animate-ripple ${isWhite ? "bg-primary/20 dark:bg-primary/50" : "bg-white/20"}`}
+                    style={{
+                        top: ripple.y,
+                        left: ripple.x,
+                        width: ripple.size,
+                        height: ripple.size
+                    }}
+                />
+            )}
+        </>
     );
 };
