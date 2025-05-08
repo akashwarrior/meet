@@ -5,67 +5,36 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { Room, LocalParticipant, RemoteParticipant, ChatMessage } from "livekit-client"
-import { FormEvent, memo, useEffect, useRef, useState } from "react";
+import { FormEvent, memo, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MessageSquare, Mic, MicOff, Send, Users, Video, VideoOff, X } from "lucide-react";
-import useParticipantStore from "@/store/participant";
 import useSidebarOpenStore from "@/store/sideBar";
+import { ReceivedChatMessage, useChat } from "@livekit/components-react";
+import { useParticipants } from "@livekit/components-react";
 
-interface DataChannelMessage {
-    id: string,
-    senderId: string,
-    username: string,
-    message: string,
-    timestamp: number,
-}
 
-const SideBar = memo(({ localParticipant, room }: { localParticipant: LocalParticipant, room: Room }) => {
+const SideBar = memo(() => {
     const chatEndRef = useRef<HTMLDivElement>(null)
-    const messageRef = useRef<HTMLInputElement>(null)
-    const [messages, setMessages] = useState<DataChannelMessage[]>([])
-    const participants = useParticipantStore((state) => state.participants)
-    const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore()
+    const messageRef = useRef<HTMLInputElement>(null);
+    const participants = useParticipants()
+    const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore();
+    const { chatMessages, send } = useChat();
+
+    console.log(chatMessages)
 
     useEffect(() => {
         if (chatEndRef.current) {
             chatEndRef.current.scrollIntoView({ behavior: "smooth" })
         }
-    }, [messages])
-
-    useEffect(() => {
-        const handler = ({ id, message, timestamp }: ChatMessage, participant?: RemoteParticipant | LocalParticipant) => {
-            if (participant) {
-                const username = participant.name || "Unknown"
-                setMessages((prevMessages) => [
-                    ...prevMessages,
-                    {
-                        id,
-                        username,
-                        message,
-                        timestamp,
-                        senderId: participant.sid,
-                    }
-                ])
-            }
-        };
-
-        room.on('chatMessage', handler);
-
-        return () => {
-            room.off('chatMessage', handler);
-        };
-    }, []);
+    }, [chatMessages])
 
 
-    // Send a chat message
     const SendMessage = async (e: FormEvent) => {
         e.preventDefault()
         const message = messageRef.current?.value || ""
         if (!message.trim()) return
-        console.log("Sending message:", message)
         messageRef.current!.value = ""
-        localParticipant.sendChatMessage(message)
+        send(message)
     }
 
     return (
@@ -100,7 +69,7 @@ const SideBar = memo(({ localParticipant, room }: { localParticipant: LocalParti
                 <TabsContent value="participants" className="flex-1 p-0 m-0 overflow-hidden">
                     <h3 className="text-sm font-medium text-muted-foreground my-2 mx-4">Participants</h3>
                     <ScrollArea className="h-full px-6">
-                        {participants.map(({ sid, name }) => (
+                        {participants.map(({ sid, name, isMicrophoneEnabled, isCameraEnabled }) => (
                             <div key={sid} className="flex items-center justify-between py-2">
                                 <div className="flex items-center gap-4">
                                     <Avatar className="h-8 w-8">
@@ -110,8 +79,8 @@ const SideBar = memo(({ localParticipant, room }: { localParticipant: LocalParti
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center text-muted-foreground gap-4">
-                                        {name ? <MicOff size="18" /> : <Mic size="18" />}
-                                        {name ? <VideoOff size="18" /> : <Video size="18" />}
+                                        {isMicrophoneEnabled ? <Mic size="18" /> : <MicOff size="18" />}
+                                        {isCameraEnabled ? <Video size="18" /> : <VideoOff size="18" />}
                                     </div>
                                     {/* <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -142,15 +111,15 @@ const SideBar = memo(({ localParticipant, room }: { localParticipant: LocalParti
                 <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
                     <ScrollArea className="flex-1">
                         <div className="p-4 space-y-4">
-                            {messages.map(({ id, message, senderId, username, timestamp }) => (
-                                <div key={id} className={`flex flex-col ${senderId === localParticipant.sid ? "bg-primary/15" : "bg-gray-100 dark:bg-neutral-800"} rounded-lg py-3 px-4`}>
+                            {chatMessages.map(({ id, message, timestamp, from }: ReceivedChatMessage) => (
+                                <div key={id} className={`flex flex-col ${from?.allParticipantsAllowedToSubscribe ? "bg-primary/15" : "bg-gray-100 dark:bg-neutral-800"} rounded-lg py-3 px-4`}>
                                     <div className="flex items-center mb-1">
-                                        <span className={cn("font-medium mr-2", senderId === localParticipant.sid && "text-blue-500 dark:text-blue-400")}>
-                                            {username}
+                                        <span className={cn("font-medium mr-2", from?.allParticipantsAllowedToSubscribe && "text-blue-500 dark:text-blue-400")}>
+                                            {from.name}
                                         </span>
                                         <span className="text-xs text-muted-foreground">{new Date(timestamp).toLocaleTimeString("en-IN", { hour12: true, hour: "2-digit", minute: "2-digit" })}</span>
                                     </div>
-                                    <p className={cn("text-foreground", senderId === localParticipant.sid && "text-muted-foreground italic")}>
+                                    <p className={cn("text-foreground", from?.allParticipantsAllowedToSubscribe && "text-muted-foreground italic")}>
                                         {message}
                                     </p>
                                 </div>

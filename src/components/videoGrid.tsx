@@ -8,13 +8,13 @@ import { LucideChevronLeft, LucideChevronRight } from "lucide-react"
 import { LazyMotion } from "motion/react"
 import * as motion from "motion/react-m"
 import Participant from "./participant"
-import useParticipantStore from "@/store/participant"
+import { useParticipants } from "@livekit/components-react"
 
 const loadFeatures = () => import("@/components/domAnimation").then(res => res.default)
 
 const VideoGrid = memo(() => {
     const [currentPage, setCurrentPage] = useState(0)
-    const participants = useParticipantStore((state) => state.participants)
+    const participants = useParticipants();
     const mobile = useMobile();
 
     const participantsPerPage = mobile ? 6 : 9
@@ -59,13 +59,11 @@ const VideoGrid = memo(() => {
                     layout
                 >
                     {currentParticipants.map(
-                        ({ sid, name }) =>
+                        ({ sid, identity, name }) =>
                             <Participant
                                 key={sid}
-                                participant={{
-                                    id: sid,
-                                    name: name || "Unknown",
-                                }}
+                                identity={identity}
+                                userName={name || "Unknown"}
                             />
                     )}
                 </motion.div>

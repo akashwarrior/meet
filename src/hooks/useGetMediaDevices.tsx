@@ -75,7 +75,7 @@ export function useGetMediaDevices() {
 
         initializeDevices({ audio: true, video: true })
 
-    }, [])
+    }, [setAudioPrefs, setVideoPrefs])
 
     return { audioDevices, videoDevices, speakerDevices }
 }
