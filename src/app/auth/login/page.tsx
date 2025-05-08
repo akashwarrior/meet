@@ -51,7 +51,7 @@ export default function Login() {
 
     return (
         <ViewTransition name="credentials">
-            <div className="z-10 w-full max-w-[450px] h-[80vh] p-11 rounded-lg bg-background flex flex-col max-h-[600px] justify-between">
+            <div className="z-10 w-full max-w-[450px] min-h-[80vh] p-11 rounded-lg bg-background flex flex-col max-h-[600px] justify-between">
                 <div className="flex flex-col items-center mb-4 gap-3 text-center">
                     <ViewTransition name="titles">
                         <h2 className="text-3xl font-bold tracking-tight">Welcome back</h2>
@@ -117,6 +117,25 @@ export default function Login() {
                         className="w-full mt-6 py-5.5 rounded-full text-base"
                     >
                         {loading ? "Loading..." : "Login"}
+                    </Button>
+                    <div className="flex items-center justify-center">
+                        <hr className="w-full border-t border-border" />
+                        <span className="mx-4 text-muted-foreground">Or</span>
+                        <hr className="w-full border-t border-border" />
+                    </div>
+                    <Button
+                        type="submit"
+                        variant="outline"
+                        className="w-full py-5.5 rounded-full text-base border dark:border-white/50"
+                        disabled={loading}
+                        onClick={(e) => {
+                            if (!emailRef.current || !passwordRef.current) return
+                            emailRef.current.value = "guest@example.com"
+                            passwordRef.current.value = "guest123"
+                            handleLogin(e)
+                        }}
+                    >
+                        Continue as Guest
                     </Button>
                 </form>
 
