@@ -120,13 +120,13 @@ export default function Login() {
                     </Button>
                     <div className="flex items-center justify-center">
                         <hr className="w-full border-t border-border" />
-                        <span className="mx-4 text-muted-foreground">Or</span>
+                        <span className="mx-4 text-muted-foreground text-sm">or</span>
                         <hr className="w-full border-t border-border" />
                     </div>
                     <Button
                         type="submit"
-                        variant="outline"
-                        className="w-full py-5.5 rounded-full text-base border dark:border-white/50"
+                        variant="ghost"
+                        className="w-full py-5.5 rounded-full border dark:border-white/50 text-black/80 dark:text-white"
                         disabled={loading}
                         onClick={(e) => {
                             if (!emailRef.current || !passwordRef.current) return

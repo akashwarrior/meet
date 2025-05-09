@@ -21,7 +21,7 @@ const myFont = localFont({
 })
 
 export const metadata: Metadata = {
-  icons: './icon.svg',
+  icons: { icon: '/icon.svg' },
   title: "Meet - Professional Video Conferencing",
   description: "Connect securely with end-to-end encryption. Host video meetings and collaborate with just a few clicks.",
   keywords: "video conferencing, online meetings, collaboration, end-to-end encryption, secure communication",
