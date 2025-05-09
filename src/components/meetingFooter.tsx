@@ -8,20 +8,12 @@ import { useRouter } from "next/navigation";
 import LiveClock from "./liveClock";
 import useSidebarOpenStore from "@/store/sideBar";
 import { MessageSquare, Mic, MicOff, Phone, Users, Video, VideoOff } from "lucide-react";
-import { usePersistentUserChoices, DisconnectButton, useLocalParticipant } from "@livekit/components-react";
+import { DisconnectButton, useLocalParticipant } from "@livekit/components-react";
 
 const MeetingFooter = memo(() => {
     const router = useRouter()
     const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore()
-    const { saveAudioInputEnabled, saveVideoInputEnabled } = usePersistentUserChoices()
-    const {
-        isCameraEnabled,
-        isMicrophoneEnabled,
-        localParticipant: {
-            setCameraEnabled,
-            setMicrophoneEnabled,
-        },
-    } = useLocalParticipant()
+    const { isCameraEnabled, isMicrophoneEnabled, localParticipant } = useLocalParticipant()
 
     // Toggle sidebar
     const toggleSidebar = (tab: "participants" | "chat" | null) => {
@@ -34,8 +26,7 @@ const MeetingFooter = memo(() => {
 
     const toggleVideo = async () => {
         try {
-            await setCameraEnabled(!isCameraEnabled);
-            saveVideoInputEnabled(!isCameraEnabled)
+            await localParticipant.setCameraEnabled(!isCameraEnabled);
         } catch (err) {
             console.log(err)
             toast.error("Failed to toggle video", {
@@ -46,8 +37,7 @@ const MeetingFooter = memo(() => {
 
     const toggleMic = async () => {
         try {
-            await setMicrophoneEnabled(!isMicrophoneEnabled);
-            saveAudioInputEnabled(!isMicrophoneEnabled)
+            await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
         } catch (err) {
             toast.error("Failed to toggle audio", {
                 description: err instanceof Error ? err.message : "Error toggling audio"

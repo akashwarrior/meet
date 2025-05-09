@@ -65,12 +65,12 @@ export default function Signup() {
 
     return (
         <ViewTransition name="credentials">
-            <div className="z-10 w-full max-w-[450px] h-[80vh] p-11 rounded-lg bg-background flex flex-col max-h-[600px]">
-                <form onSubmit={handleSubmit} className="flex flex-col flex-1 justify-between ">
-                    <div className="flex flex-col items-center mb-4 gap-3 text-center">
+            <div className="z-10 w-full max-w-[450px] h-[80vh] p-11 rounded-lg bg-background flex flex-col">
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 justify-between">
+                    <div className="flex flex-col items-center gap-3 text-center">
                         <ViewTransition name="titles">
                             <h2 className="text-3xl font-bold tracking-tight">Create an account</h2>
-                            <p className="text-muted-foreground mb-6">Enter your information to get started</p>
+                            <p className="text-muted-foreground">Enter your information to get started</p>
                         </ViewTransition>
                     </div>
 
@@ -136,24 +136,22 @@ export default function Signup() {
                         </p>
                     </div>
 
-                    <div className="pt-6">
-                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <Link
-                                replace={true}
-                                href="/auth/login"
-                                className="text-[#1a73e8] hover:text-[#174ea6] font-medium text-sm order-2 sm:order-1"
-                            >
-                                Sign in instead
-                            </Link>
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <Link
+                            replace={true}
+                            href="/auth/login"
+                            className="text-[#1a73e8] hover:text-[#174ea6] font-medium text-sm order-2 sm:order-1"
+                        >
+                            Sign in instead
+                        </Link>
 
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                className="px-6 rounded-md w-full sm:w-auto order-1 sm:order-2"
-                            >
-                                {loading ? "Creating account..." : "Create Account"}
-                            </Button>
-                        </div>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="px-6 rounded-md w-full sm:w-auto order-1 sm:order-2"
+                        >
+                            {loading ? "Creating account..." : "Create Account"}
+                        </Button>
                     </div>
                 </form>
             </div>

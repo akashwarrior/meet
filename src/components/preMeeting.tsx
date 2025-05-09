@@ -1,43 +1,68 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { EllipsisVertical, Mic, MicOff, Video, VideoOff } from "lucide-react"
 import useMeetingPrefsStore from "@/store/meetingPrefs"
-import { useRoomContext } from "@livekit/components-react";
+import { useMediaDeviceSelect, useRoomContext } from "@livekit/components-react";
 import { ConnectionState } from "livekit-client";
 import Header from "@/components/header"
 import dynamic from "next/dynamic"
+import { useMediaQuery } from "usehooks-ts"
 
-const SettingsDialog = dynamic(() => import("./settingsDialog").then((mod) => mod.default), { ssr: false })
-const PermissionDialog = dynamic(() => import("./permissionDialog").then((mod) => mod.default), { ssr: false })
-const DeviceSelection = dynamic(() => import("./deviceSelection").then((mod) => mod.default), { ssr: false })
+const PermissionDialog = dynamic(() => import("./permissionDialog").then((mod) => mod.default), {
+    ssr: false,
+})
+const DeviceSelection = dynamic(() => import("./deviceSelection").then((mod) => mod.default), {
+    ssr: false,
+})
+const SettingsDialog = dynamic(() => import("./settingsDialog").then((mod) => mod.default), {
+    ssr: false,
+})
 
-export default function PreMeeting({ meetingId }: { meetingId: string }) {
+export default function PreMeeting({
+    meetingId,
+    handleConnect
+}: { meetingId: string, handleConnect: () => void }) {
     const { connect, state } = useRoomContext();
     const { data: session } = useSession()
+    const isSmallScreen = useMediaQuery("(max-width: 1024px)")
     const nameRef = useRef<HTMLInputElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const isVideoEnabled = useMeetingPrefsStore(state => state.meeting.isVideoEnabled);
+    const setMeetingPrefs = useMeetingPrefsStore(state => state.setMeetingPrefs);
+    const [showDialog, setShowDialog] = useState(false)
+    const { activeDeviceId } = useMediaDeviceSelect({
+        kind: "videoinput",
+        requestPermissions: false,
+    });
+    const [render, setRender] = useState(false)
+
+    useEffect(() => {
+        setRender(true)
+    }, [])
 
     useEffect(() => {
         if (isVideoEnabled) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then((stream) => {
-                    streamRef.current = stream
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream
-                    }
-                }).catch((error) => {
-                    console.error("Error getting media stream:", error)
-                    toast.error("Media Error", {
-                        description: "Could not access selected devices. Please try different ones.",
-                    })
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    deviceId: activeDeviceId === "default" ? undefined : { exact: activeDeviceId }
+                }
+            }).then((stream) => {
+                streamRef.current = stream
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream
+                }
+            }).catch((error) => {
+                console.error("Error getting media stream:", error)
+                toast.error("Media Error", {
+                    description: "Could not access selected devices. Please try different ones.",
                 })
+            })
         }
 
         return () => {
@@ -46,7 +71,23 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
                 streamRef.current?.removeTrack(track)
             })
         }
-    }, [isVideoEnabled])
+    }, [isVideoEnabled, activeDeviceId])
+
+    useEffect(() => {
+        if (navigator.permissions) {
+            const cameraResult = navigator.permissions.query({ name: "camera" })
+            const micResult = navigator.permissions.query({ name: "microphone" })
+            Promise.all([cameraResult, micResult]).then(([cameraResult, micResult]) => {
+                if (cameraResult.state === "prompt" && micResult.state === "prompt") {
+                    setShowDialog(true)
+                    setMeetingPrefs({
+                        isVideoEnabled: false,
+                        isAudioEnabled: false,
+                    })
+                }
+            })
+        }
+    }, [setMeetingPrefs])
 
 
     // Join the meeting
@@ -63,6 +104,7 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
             const data = await res.json();
             if (data.token) {
                 await connect(process.env.NEXT_PUBLIC_LIVEKIT_URL as string, data.token);
+                handleConnect()
             } else {
                 throw new Error("Failed to connect to the server");
             }
@@ -71,7 +113,6 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
             toast.error("Failed to connect to the server");
         }
     }
-
 
     return (
         <div className="min-h-[90vh] bg-background flex flex-col items-center justify-center">
@@ -96,7 +137,7 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
                         )}
                         <VideoControls />
                     </div>
-                    <DeviceSelection />
+                    {(render && !isSmallScreen) && <DeviceSelection />}
                 </div>
 
                 <div className="w-full max-w-xs flex flex-col gap-7 items-center">
@@ -123,7 +164,7 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
             </main>
 
             {/* Permission Dialog */}
-            <PermissionDialog />
+            {(render && showDialog) && <PermissionDialog />}
         </div >
     )
 }

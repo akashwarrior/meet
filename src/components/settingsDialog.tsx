@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
@@ -9,18 +9,24 @@ import { Settings, Video, Volume2, X } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import useMeetingPrefsStore, { Codecs } from "@/store/meetingPrefs";
-import { useGetMediaDevices } from "@/hooks/useGetMediaDevices";
+import { useMediaDeviceSelect } from "@livekit/components-react";
 
-const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
-    const {
-        audio: { audioInputDevice, audioOutputDevice },
-        video: { videoInputDevice, videoResolution, videoCodec, videoFrames, backgroundBlur },
-        setAudioPrefs,
-        setVideoPrefs,
-    } = useMeetingPrefsStore()
+export default function SettingsDialog({ children }: { children: React.ReactNode }) {
+    const { videoResolution, videoCodec, videoFrames, backgroundBlur } = useMeetingPrefsStore(state => state.video)
+    const setVideoPrefs = useMeetingPrefsStore(state => state.setVideoPrefs)
 
-    // Device settings
-    const { audioDevices, videoDevices, speakerDevices } = useGetMediaDevices();
+    const { devices: audioDevices, activeDeviceId: audioActiveDeviceId, setActiveMediaDevice: setAudioActiveDevice } = useMediaDeviceSelect({
+        kind: "audioinput",
+        requestPermissions: false,
+    });
+    const { devices: videoDevices, activeDeviceId: videoActiveDeviceId, setActiveMediaDevice: setVideoActiveDevice } = useMediaDeviceSelect({
+        kind: "videoinput",
+        requestPermissions: false,
+    });
+    const { devices: speakerDevices, activeDeviceId: speakerActiveDeviceId, setActiveMediaDevice: setSpeakerActiveDevice } = useMediaDeviceSelect({
+        kind: "audiooutput",
+        requestPermissions: false,
+    });
 
     const [resolutions, setResulution] = useState<{ width: number, height: number }[]>([
         { width: 3840, height: 2160 },
@@ -31,39 +37,10 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
     ]);
     const [frameRates, setFrameRates] = useState([60, 30, 15, 10]);
     const [activeTab, setActiveTab] = useState<"audio" | "video" | "general">("video")
-    const codecss = useMemo<Codecs[]>(
-        () => {
-            if (!videoDevices.length) return ["vp8", "h264", "vp9", "av1"];
-            const codecs: Set<Codecs> = new Set<Codecs>();
-            RTCRtpSender.getCapabilities('video')
-                ?.codecs
-                .map(codec => {
-                    if (videoDevices[0].kind === 'videoinput') {
-                        const mimeType = codec.mimeType.split('/')[1].toLowerCase()
-                        switch (mimeType) {
-                            case 'vp8':
-                                codecs.add('vp8')
-                                break
-                            case 'vp9':
-                                codecs.add('vp9')
-                                break
-                            case 'av1':
-                                codecs.add('av1')
-                                break
-                            case 'h264':
-                                codecs.add('h264')
-                                break
-                            default:
-                                break
-                        }
-                    }
-                })
-            return Array.from(codecs)
-        }, [videoDevices]);
-
+    const codecss = ["vp8", "h264", "vp9", "av1"];
 
     useEffect(() => {
-        if (!navigator.mediaDevices || !videoDevices.length) return;
+        if (!navigator.mediaDevices || (!videoDevices.length || !videoDevices[0].deviceId)) return;
         (async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -93,7 +70,7 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
             }
         })()
 
-    }, [videoDevices, setAudioPrefs, setVideoPrefs])
+    }, [videoDevices, setVideoPrefs])
 
 
     return (
@@ -149,92 +126,15 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
 
                     {/* Right content */}
                     <div className="px-6 py-3 w-full h-full">
-                        {/* Audio Settings */}
-                        {activeTab === "audio" && (
-                            <div className="space-y-7 w-full">
-                                <Label htmlFor="microphone" className="font-medium mb-2 text-base text-primary">Microphone</Label>
-                                <Select
-                                    value={audioInputDevice?.deviceId}
-                                    onValueChange={(deviceId) => {
-                                        setAudioPrefs({ audioInputDevice: audioDevices.find((device) => device.deviceId === deviceId) })
-                                    }}
-                                    disabled={!audioDevices.length}
-                                >
-                                    <SelectTrigger id="microphone" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
-                                        <SelectValue placeholder="Select microphone" />
-                                    </SelectTrigger>
-                                    <SelectContent align="start" >
-                                        <SelectGroup>
-                                            {audioDevices.map((device) => (
-                                                <SelectItem
-                                                    key={device.deviceId}
-                                                    value={device.deviceId}
-                                                    className="p-2.5 bg-background cursor-pointer"
-                                                >
-                                                    {device.label || `Microphone ${audioDevices.indexOf(device) + 1}`}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                                <div className="flex justify-between items-center mb-2 max-w-11/12">
-                                    <h3 className="text-primary font-medium flex">Push to talk</h3>
-                                    <Switch
-                                        defaultChecked={!!audioDevices.length}
-                                        onCheckedChange={() => { }}
-                                        disabled={!audioDevices.length}
-                                        className="shadow cursor-pointer"
-                                    />
-                                </div>
-                                <p className="text-sm text-[#5f6368]">Press and hold spacebar to unmute your mic</p>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="speaker" className="font-medium mb-2 text-base text-primary">Speaker</Label>
-                                    <Select
-                                        value={audioOutputDevice?.deviceId}
-                                        onValueChange={(deviceId) => {
-                                            setAudioPrefs({ audioOutputDevice: speakerDevices.find((device) => device.deviceId === deviceId) })
-                                        }}
-                                        disabled={!audioDevices.length}
-                                    >
-                                        <SelectTrigger id="speaker" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
-                                            <SelectValue placeholder="Select speaker" />
-                                        </SelectTrigger>
-                                        <SelectContent align="start" >
-                                            <SelectGroup>
-                                                {speakerDevices.map((device) => (
-                                                    <SelectItem
-                                                        key={device.deviceId}
-                                                        value={device.deviceId}
-                                                        className="p-2.5 bg-background cursor-pointer"
-                                                    >
-                                                        {device.label || `Speaker ${speakerDevices.indexOf(device) + 1}`}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        variant="outline"
-                                        className="mt-2"
-                                        disabled={!audioDevices.length}
-                                    >
-                                        Test
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-
                         {/* Video Settings */}
                         {activeTab === "video" && (
                             <div className="space-y-8 w-full flex flex-col h-full">
+                                {/* Camera Settings */}
                                 <Label htmlFor="camera" className="font-medium mb-2 text-base text-primary">Camera</Label>
                                 <Select
-                                    value={videoInputDevice?.deviceId}
-                                    onValueChange={(deviceId) => {
-                                        setVideoPrefs({ videoInputDevice: videoDevices.find((device) => device.deviceId === deviceId) })
-                                    }}
-                                    disabled={!videoDevices.length}
+                                    value={videoDevices?.[0]?.deviceId ? videoDevices.find(device => device.deviceId === videoActiveDeviceId)?.deviceId || videoDevices[0].deviceId : "Permission needed"}
+                                    onValueChange={(deviceId) => setVideoActiveDevice(deviceId)}
+                                    disabled={!videoDevices?.[0]?.deviceId}
                                 >
                                     <SelectTrigger id="camera" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
                                         <SelectValue placeholder="Select camera" />
@@ -243,11 +143,11 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
                                         <SelectGroup>
                                             {videoDevices.map((device) => (
                                                 <SelectItem
-                                                    key={device.deviceId}
-                                                    value={device.deviceId}
+                                                    key={device.deviceId || videoActiveDeviceId}
+                                                    value={device.deviceId || videoActiveDeviceId}
                                                     className="p-2.5 bg-background cursor-pointer"
                                                 >
-                                                    {device.label || `Speaker ${videoDevices.indexOf(device) + 1}`}
+                                                    {device.label || videoActiveDeviceId}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
@@ -261,7 +161,7 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
                                         defaultChecked={!!videoDevices.length}
                                         checked={backgroundBlur}
                                         onCheckedChange={(val) => setVideoPrefs({ backgroundBlur: val })}
-                                        disabled={!videoDevices.length}
+                                        disabled={!videoDevices?.[0]?.deviceId}
                                         className="shadow cursor-pointer"
                                     />
                                 </div>
@@ -269,13 +169,14 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
                                     Blurs your background to keep the focus on you.
                                 </p>
 
+                                {/* Resolution settings */}
                                 <Label htmlFor="send_resolution" className="font-medium mb-2 text-base text-primary">Video Send resolution</Label>
                                 <Select
                                     value={videoResolution.height + "p"}
                                     onValueChange={(resolution) => {
                                         setVideoPrefs({ videoResolution: resolutions.find((res) => res.height + "p" === resolution) })
                                     }}
-                                    disabled={!videoDevices.length}
+                                    disabled={!videoDevices?.[0]?.deviceId}
                                 >
                                     <SelectTrigger id="send_resolution" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
                                         <SelectValue placeholder="Select Video Resolution" />
@@ -295,13 +196,12 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
                                     </SelectContent>
                                 </Select>
 
+                                {/* Codec settings */}
                                 <Label htmlFor="codecs" className="font-medium mb-2 text-base text-primary">Video Codec</Label>
                                 <Select
                                     value={videoCodec}
-                                    onValueChange={(codec) => {
-                                        setVideoPrefs({ videoCodec: codecss.find((res) => res.toLocaleLowerCase() === codec) })
-                                    }}
-                                    disabled={!videoDevices.length}
+                                    onValueChange={(codec) => setVideoPrefs({ videoCodec: codec as Codecs })}
+                                    disabled={!videoDevices?.[0]?.deviceId}
                                 >
                                     <SelectTrigger id="codecs" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
                                         <SelectValue placeholder="Select Video Codec" />
@@ -321,13 +221,12 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
                                     </SelectContent>
                                 </Select>
 
+                                {/* Frames settings */}
                                 <Label htmlFor="frames" className="font-medium mb-2 text-base text-primary">Video Frames</Label>
                                 <Select
                                     value={videoFrames.toString()}
-                                    onValueChange={(frames) => {
-                                        setVideoPrefs({ videoFrames: frameRates.find((res) => res === parseInt(frames)) })
-                                    }}
-                                    disabled={!videoDevices.length}
+                                    onValueChange={(frames) => setVideoPrefs({ videoFrames: parseInt(frames) })}
+                                    disabled={!videoDevices?.[0]?.deviceId}
                                 >
                                     <SelectTrigger id="frames" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
                                         <SelectValue placeholder="Select Video Frames" />
@@ -347,6 +246,79 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
                                     </SelectContent>
                                 </Select>
 
+                            </div>
+                        )}
+
+                        {/* Audio Settings */}
+                        {activeTab === "audio" && (
+                            <div className="space-y-7 w-full">
+                                <Label htmlFor="microphone" className="font-medium mb-2 text-base text-primary">Microphone</Label>
+                                <Select
+                                    value={audioDevices?.[0]?.deviceId ? audioDevices.find(device => device.deviceId === audioActiveDeviceId)?.deviceId || audioDevices[0].deviceId : "Permission needed"}
+                                    onValueChange={(deviceId) => setAudioActiveDevice(deviceId)}
+                                    disabled={!audioDevices?.[0]?.deviceId}
+                                >
+                                    <SelectTrigger id="microphone" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                        <SelectValue placeholder="Select microphone" />
+                                    </SelectTrigger>
+                                    <SelectContent align="start" >
+                                        <SelectGroup>
+                                            {audioDevices.map((device) => (
+                                                <SelectItem
+                                                    key={device.deviceId || audioActiveDeviceId}
+                                                    value={device.deviceId || audioActiveDeviceId}
+                                                    className="p-2.5 bg-background cursor-pointer"
+                                                >
+                                                    {device.label || audioActiveDeviceId}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex justify-between items-center mb-2 max-w-11/12">
+                                    <h3 className="text-primary font-medium flex">Push to talk</h3>
+                                    <Switch
+                                        defaultChecked={!!audioDevices?.[0]?.deviceId}
+                                        onCheckedChange={() => { }}
+                                        disabled={!audioDevices?.[0]?.deviceId}
+                                        className="shadow cursor-pointer"
+                                    />
+                                </div>
+                                <p className="text-sm text-[#5f6368]">Press and hold spacebar to unmute your mic</p>
+
+                                {/* Speaker Settings */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="speaker" className="font-medium mb-2 text-base text-primary">Speaker</Label>
+                                    <Select
+                                        value={speakerDevices?.[0]?.deviceId ? speakerDevices.find(device => device.deviceId === speakerActiveDeviceId)?.deviceId || speakerDevices[0].deviceId : "Permission needed"}
+                                        onValueChange={(deviceId) => setSpeakerActiveDevice(deviceId)}
+                                        disabled={!speakerDevices?.[0]?.deviceId}
+                                    >
+                                        <SelectTrigger id="speaker" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                            <SelectValue placeholder="Select speaker" />
+                                        </SelectTrigger>
+                                        <SelectContent align="start" >
+                                            <SelectGroup>
+                                                {speakerDevices.map((device) => (
+                                                    <SelectItem
+                                                        key={device.deviceId || speakerActiveDeviceId}
+                                                        value={device.deviceId || speakerActiveDeviceId}
+                                                        className="p-2.5 bg-background cursor-pointer"
+                                                    >
+                                                        {device.label || speakerActiveDeviceId}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        variant="outline"
+                                        className="mt-2"
+                                        disabled={!speakerDevices?.[0]?.deviceId}
+                                    >
+                                        Test
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
@@ -386,7 +358,4 @@ const SettingsDialog = memo(({ children }: { children: React.ReactNode }) => {
             </DialogContent>
         </Dialog>
     )
-});
-
-export default SettingsDialog;
-SettingsDialog.displayName = "SettingsDialog"
+}
