@@ -47,6 +47,10 @@ export default function Home() {
   const startInstantMeeting = useCallback(async () => {
     const link = await generateMeetingLink();
     if (link) {
+      setLoading(true)
+      toast.success("Meeting created successfully", {
+        description: "Redirecting to meeting...",
+      });
       router.push(`/meeting/${link.split('/').pop()}`)
     }
   }, [router, generateMeetingLink]);
@@ -63,9 +67,9 @@ export default function Home() {
 
   // Function to join a meeting
   const joinMeeting = useCallback(async () => {
-    const meetingCode = meetingCodeRef.current?.value || ""
+    const meetingCode = meetingCodeRef.current?.value.trim() || ""
 
-    if (!meetingCode.trim()) {
+    if (!meetingCode) {
       meetingCodeRef.current?.focus()
       toast.error("Meeting code required", {
         description: "Please enter a meeting code to join",
@@ -126,7 +130,7 @@ export default function Home() {
         <section className="mx-auto flex flex-col md:px-4 py-12 md:py-5 md:flex-row items-center justify-between max-w-7xl">
           <div className="max-w-lg md:mb-0 m-10">
             <h1 className="text-3xl md:text-5xl text-foreground mb-6">
-              Video calls and meetings for everyone.
+              Video calls and meetings for everyone
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8">
               Connect, collaborate and celebrate from anywhere with Meet
@@ -147,6 +151,7 @@ export default function Home() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.3 }}
                     className="w-full h-full bg-background overflow-hidden"
                   >
                     <DropdownMenuItem
@@ -175,7 +180,7 @@ export default function Home() {
                   placeholder="Enter a code or link"
                   ref={meetingCodeRef}
                   disabled={loading}
-                  className="border-none h-full focus-visible:ring-0 bg-background py-4"
+                  className="border-none h-full focus-visible:ring-0 py-4 bg-transparent!"
                 />
               </div>
 

@@ -51,15 +51,15 @@ export default function Login() {
 
     return (
         <ViewTransition name="credentials">
-            <div className="z-10 w-full max-w-[450px] min-h-[80vh] p-11 rounded-lg bg-background flex flex-col max-h-[600px] justify-between">
-                <div className="flex flex-col items-center mb-4 gap-3 text-center">
+            <div className="z-10 w-full max-w-[450px] min-h-[85vh] p-11 rounded-lg bg-background flex flex-col justify-between">
+                <div className="flex flex-col items-center gap-3 text-center">
                     <ViewTransition name="titles">
                         <h2 className="text-3xl font-bold tracking-tight">Welcome back</h2>
-                        <p className="text-muted-foreground mb-6">Enter your credentials to access your account</p>
+                        <p className="text-muted-foreground">Enter your credentials to access your account</p>
                     </ViewTransition>
                 </div>
 
-                <form onSubmit={handleLogin} className="flex flex-col gap-4 mb-10">
+                <form onSubmit={handleLogin} className="flex flex-col gap-4 mt-10 mb-6">
                     <div className="flex flex-col gap-2">
                         <Label htmlFor="email">Email</Label>
 
@@ -111,32 +111,34 @@ export default function Login() {
                             )}
                         </div>
                     </div>
-                    <Button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full mt-6 py-5.5 rounded-full text-base"
-                    >
-                        {loading ? "Loading..." : "Login"}
-                    </Button>
-                    <div className="flex items-center justify-center">
-                        <hr className="w-full border-t border-border" />
-                        <span className="mx-4 text-muted-foreground text-sm">or</span>
-                        <hr className="w-full border-t border-border" />
+                    <div className="flex flex-col gap-3">
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full mt-6 py-5.5 rounded-full text-base"
+                        >
+                            {loading ? "Loading..." : "Login"}
+                        </Button>
+                        <div className="flex items-center justify-center">
+                            <hr className="w-full border-t border-border" />
+                            <span className="mx-4 text-muted-foreground text-sm">or</span>
+                            <hr className="w-full border-t border-border" />
+                        </div>
+                        <Button
+                            type="submit"
+                            variant="ghost"
+                            className="w-full py-5.5 rounded-full border dark:border-white/50 text-black/80 dark:text-white"
+                            disabled={loading}
+                            onClick={(e) => {
+                                if (!emailRef.current || !passwordRef.current) return
+                                emailRef.current.value = "guest@example.com"
+                                passwordRef.current.value = "guest123"
+                                handleLogin(e)
+                            }}
+                        >
+                            Continue as Guest
+                        </Button>
                     </div>
-                    <Button
-                        type="submit"
-                        variant="ghost"
-                        className="w-full py-5.5 rounded-full border dark:border-white/50 text-black/80 dark:text-white"
-                        disabled={loading}
-                        onClick={(e) => {
-                            if (!emailRef.current || !passwordRef.current) return
-                            emailRef.current.value = "guest@example.com"
-                            passwordRef.current.value = "guest123"
-                            handleLogin(e)
-                        }}
-                    >
-                        Continue as Guest
-                    </Button>
                 </form>
 
 

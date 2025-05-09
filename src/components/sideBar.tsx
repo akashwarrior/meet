@@ -20,8 +20,6 @@ const SideBar = memo(() => {
     const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore();
     const { chatMessages, send } = useChat();
 
-    console.log(chatMessages)
-
     useEffect(() => {
         if (chatEndRef.current) {
             chatEndRef.current.scrollIntoView({ behavior: "smooth" })

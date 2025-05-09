@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogClose } from "./ui/dialog"
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTitle } from "./ui/dialog"
 import Image from "next/image"
 import useMeetingPrefsStore from "@/store/meetingPrefs";
-import { useGetMediaDevices } from "@/hooks/useGetMediaDevices";
 import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -14,19 +13,11 @@ const loadFeatures = () => import("@/components/domAnimation").then(res => res.d
 export default function PermissionDialog() {
     const [isCollapsed, setIsCollapsed] = useState(false)
     const setMeetingPrefs = useMeetingPrefsStore(state => state.setMeetingPrefs);
-    const { audioDevices, videoDevices } = useGetMediaDevices();
-    const openDialog = useRef(false);
+    const [showDialog, setShowDialog] = useState(true)
 
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            openDialog.current = !audioDevices.length && !videoDevices.length
-        }, 200)
-        return () => clearTimeout(timeout)
-    }, [audioDevices.length, videoDevices.length])
-
-    return !audioDevices.length && !videoDevices.length ? (
+    return showDialog ? (
         <LazyMotion features={loadFeatures}>
-            <Dialog open={openDialog.current}>
+            <Dialog open={showDialog}>
                 <DialogContent className="[&>button]:hidden border-none flex flex-col items-center rounded-2xl md:max-w-3xl!" aria-describedby={undefined}>
                     <DialogTitle />
                     <Image
@@ -50,6 +41,7 @@ export default function PermissionDialog() {
                             onClick={() => {
                                 navigator.mediaDevices.getUserMedia({ audio: true, video: true })
                                     .then((stream) => {
+                                        setShowDialog(false)
                                         stream.getTracks().forEach((track) => {
                                             track.stop()
                                             stream.removeTrack(track)
@@ -89,6 +81,7 @@ export default function PermissionDialog() {
                                 onClick={() => {
                                     navigator.mediaDevices.getUserMedia({ audio: true })
                                         .then((stream) => {
+                                            setShowDialog(false)
                                             stream.getTracks().forEach((track) => {
                                                 track.stop()
                                                 stream.removeTrack(track)
@@ -112,6 +105,7 @@ export default function PermissionDialog() {
                                 onClick={() => {
                                     navigator.mediaDevices.getUserMedia({ video: true })
                                         .then((stream) => {
+                                            setShowDialog(false)
                                             stream.getTracks().forEach((track) => {
                                                 track.stop()
                                                 stream.removeTrack(track)
@@ -130,13 +124,13 @@ export default function PermissionDialog() {
                             </Button>
                         </div>
 
-                        <DialogClose asChild>
-                            <Button
-                                variant="ghost"
-                                className="p-5 rounded-full">
-                                Continue without microphone and camera
-                            </Button>
-                        </DialogClose>
+                        <Button
+                            variant="ghost"
+                            className="p-5 rounded-full"
+                            onClick={() => setShowDialog(false)}
+                        >
+                            Continue without microphone and camera
+                        </Button>
                     </motion.div>
                 </DialogContent>
             </Dialog >
