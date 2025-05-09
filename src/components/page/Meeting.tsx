@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from "react"
-import { useRoom } from "@/hooks/useRoom";
-import dynamic from "next/dynamic";
+import { useEffect, useRef } from "react"
 import PreMeeting from "../preMeeting";
 import { RoomContext } from "@livekit/components-react";
+import { Room, ConnectionState } from "livekit-client";
+import dynamic from "next/dynamic";
 
 const VideoGrid = dynamic(() => import("@/components/videoGrid"), { ssr: false })
 const SideBar = dynamic(() => import("@/components/sideBar"), { ssr: false })
@@ -12,25 +12,24 @@ const MeetingHeader = dynamic(() => import("@/components/meetingHeader"), { ssr:
 const MeetingFooter = dynamic(() => import("@/components/meetingFooter"), { ssr: false })
 
 export default function Meeting({ meetingId }: { meetingId: string }) {
-    const [isLoading, setIsLoading] = useState<"Loading" | "Connected" | "Disconnected">("Disconnected")
-    const [username, setUserName] = useState("")
-    const { room } = useRoom({ isLoading, setIsLoading, meetingId, username })
+    const roomRef = useRef<Room>(
+        new Room({
+            adaptiveStream: true,
+            dynacast: true,
+        })
+    );
 
     useEffect(() => {
         return () => {
-            room.disconnect();
+            roomRef.current.disconnect();
         };
-    }, [room])
+    }, [roomRef])
 
     return (
-        (isLoading !== 'Connected') ?
-            <PreMeeting
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
-                setName={setUserName}
-            />
-            :
-            <RoomContext.Provider value={room}>
+        <RoomContext.Provider value={roomRef.current}>
+            {(roomRef.current.state !== ConnectionState.Connected) ?
+                <PreMeeting meetingId={meetingId} />
+                :
                 <main className="h-screen flex flex-col bg-background">
                     <MeetingHeader meetingId={meetingId} />
                     <div className="flex-1 flex overflow-hidden">
@@ -39,6 +38,7 @@ export default function Meeting({ meetingId }: { meetingId: string }) {
                     </div>
                     <MeetingFooter />
                 </main>
-            </RoomContext.Provider>
+            }
+        </RoomContext.Provider>
     )
 }
