@@ -1,23 +1,40 @@
 'use client'
 
-import { memo } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { Mic, MicOff } from "lucide-react"
+import { memo, useEffect, useMemo, useRef } from "react"
 import * as motion from "motion/react-m"
 import { LazyMotion } from "motion/react"
-import { TrackReference, useParticipantTracks } from "@livekit/components-react";
+import { Mic, MicOff } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { useParticipantTracks } from "@livekit/components-react";
+import type { RemoteVideoTrack } from "livekit-client";
 import { Track } from "livekit-client";
 
 const loadFeatures = () => import("@/components/domAnimation").then(res => res.default)
 
-const Participant = memo(({ identity, userName }: { identity: string, userName: string }) => {
+const Participant = memo(({
+    identity,
+    userName,
+    isCameraEnabled,
+    isMicrophoneEnabled
+}: {
+    identity: string,
+    userName: string,
+    isCameraEnabled: boolean,
+    isMicrophoneEnabled: boolean
+}) => {
 
     const tracks = useParticipantTracks([Track.Source.Microphone, Track.Source.Camera], identity);
-    const audioTrack = tracks.find((val: TrackReference) => val.source === Track.Source.Microphone)?.publication?.track;
-    const videoStream = tracks.find((val: TrackReference) => val.source === Track.Source.Camera)?.publication?.track;
+    const videoTrack: RemoteVideoTrack | undefined = useMemo(() => tracks?.filter(({ source }) => source === Track.Source.Camera)[0]?.publication?.track, [tracks]);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
-    const IsVideoOn = (videoStream ? !videoStream?.isMuted : false)
-    const IsAudioOn = (audioTrack ? !audioTrack?.isMuted : false)
+    useEffect(() => {
+        if (videoRef.current && videoTrack) {
+            videoTrack.attach(videoRef.current);
+        }
+        return () => {
+            videoTrack?.detach();
+        };
+    }, [videoTrack]);
 
     return (
         <LazyMotion features={loadFeatures}>
@@ -27,59 +44,25 @@ const Participant = memo(({ identity, userName }: { identity: string, userName: 
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
+                className={`${isCameraEnabled ? "w-fit h-fit bg-transparent" : "w-full h-full bg-background"} overflow-hidden m-auto max-w-full max-h-full relative`}
                 layout
-                className={`${IsVideoOn ? "w-fit h-fit bg-transparent" : "w-full h-full"} bg-background overflow-hidden m-auto max-w-full max-h-full relative`}
             >
                 <video
+                    muted
                     autoPlay
                     playsInline
-                    muted
-                    className={`rounded-md w-full h-full max-w-full max-h-full object-contain -scale-x-100 ${!IsVideoOn && "hidden"} z-10`}
-                    ref={(video) => {
-                        if (video) {
-                            video.srcObject = IsVideoOn ? videoStream?.mediaStream : null
-                        }
-                    }}
+                    className={`rounded-md -scale-x-100 w-full h-full max-w-full max-h-full object-scale-down ${!isCameraEnabled && "hidden"}`}
+                    ref={videoRef}
                 />
 
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between z-20">
                     <div className="bg-background/80 backdrop-blur-sm rounded-md px-2 py-1 text-xs flex items-center gap-2">
-                        {IsAudioOn ? <Mic className="w-3" /> : <MicOff className="w-3" />}
+                        {isMicrophoneEnabled ? <Mic className="w-3" /> : <MicOff className="w-3" />}
                         <span>{userName}</span>
                     </div>
                 </div>
 
-                {/* <div className="z-50 w-full h-full absolute top-0 left-0 hover:opacity-100 opacity-0 inset-shadow-black bg-gradient-to-b from-black/20 to-transparent">
-                {name !== "You" && <div className="absolute top-2 right-2 overflow-hidden z-20">
-                    <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-primary/80"
-                            >
-                                <MoreHorizontal />
-                            </Button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={onMute}>
-                                {audioTrack ? "Mute" : "Request Unmute"}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={onRemove}
-                                className="text-red-500"
-                            >
-                                Remove from meeting
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>}
-            </div> */}
-
-                {!IsVideoOn && (
+                {!isCameraEnabled && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -106,7 +89,7 @@ const Participant = memo(({ identity, userName }: { identity: string, userName: 
                         >
                             <AvatarImage
                                 className="w-1/2 m-auto"
-                                src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${name}`}
+                                src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${userName}`}
                             />
                             <AvatarFallback className="bg-transparent">{userName.charAt(0)}</AvatarFallback>
                         </Avatar>

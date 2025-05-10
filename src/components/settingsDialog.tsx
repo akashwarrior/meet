@@ -6,13 +6,14 @@ import { Label } from "./ui/label";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
 import { Settings, Video, Volume2, X } from "lucide-react";
+import { useMediaDeviceSelect } from "@livekit/components-react";
+import { VideoPreset, VideoPresets } from "livekit-client";
+import useMeetingPrefsStore, { Codecs } from "@/store/meetingPrefs";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import useMeetingPrefsStore, { Codecs } from "@/store/meetingPrefs";
-import { useMediaDeviceSelect } from "@livekit/components-react";
 
 export default function SettingsDialog({ children }: { children: React.ReactNode }) {
-    const { videoResolution, videoCodec, videoFrames, backgroundBlur } = useMeetingPrefsStore(state => state.video)
+    const { resolution, videoCodec, facingMode } = useMeetingPrefsStore(state => state.video)
     const setVideoPrefs = useMeetingPrefsStore(state => state.setVideoPrefs)
 
     const { devices: audioDevices, activeDeviceId: audioActiveDeviceId, setActiveMediaDevice: setAudioActiveDevice } = useMediaDeviceSelect({
@@ -28,41 +29,27 @@ export default function SettingsDialog({ children }: { children: React.ReactNode
         requestPermissions: false,
     });
 
-    const [resolutions, setResulution] = useState<{ width: number, height: number }[]>([
-        { width: 3840, height: 2160 },
-        { width: 1920, height: 1080 },
-        { width: 1280, height: 720 },
-        { width: 640, height: 480 },
-        { width: 320, height: 240 },
-    ]);
-    const [frameRates, setFrameRates] = useState([60, 30, 15, 10]);
+    const [resolutions, setResulution] = useState<VideoPreset[]>([]);
     const [activeTab, setActiveTab] = useState<"audio" | "video" | "general">("video")
     const codecss = ["vp8", "h264", "vp9", "av1"];
+    const facingModes = ["user", "environment", "left", "right"];
 
     useEffect(() => {
         if (!navigator.mediaDevices || (!videoDevices.length || !videoDevices[0].deviceId)) return;
         (async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        frameRate: { ideal: 60 },
-                        width: { ideal: 3840 },
-                        height: { ideal: 2160 },
-                    }
-                });
-                const { width, height, frameRate } = stream.getVideoTracks()[0].getSettings()
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const { width, height } = stream.getVideoTracks()[0].getCapabilities()
                 stream.getTracks()[0].stop()
                 stream.removeTrack(stream.getVideoTracks()[0])
-
-                // preferred devices and settings
-                setResulution(prev => prev.filter(res => res.width <= (width || 3840) && res.height <= (height || 2160)))
-                setFrameRates((prev) => prev.filter(fps => fps <= (frameRate || 60)))
+                const resolutions = Object.values(VideoPresets).filter(res => res.width <= (width?.max || 1920) && res.height <= (height?.max || 1080))
+                setResulution(resolutions)
                 setVideoPrefs({
-                    videoResolution: {
-                        width: (width || 3840),
-                        height: (height || 2160)
-                    },
-                    videoFrames: frameRate,
+                    resolution: {
+                        width: resolutions[resolutions.length - 1].width,
+                        height: resolutions[resolutions.length - 1].height,
+                        frameRate: resolutions[resolutions.length - 1].encoding.maxFramerate
+                    }
                 })
             } catch (error) {
                 console.error("Error getting devices:", error)
@@ -128,124 +115,161 @@ export default function SettingsDialog({ children }: { children: React.ReactNode
                     <div className="px-6 py-3 w-full h-full">
                         {/* Video Settings */}
                         {activeTab === "video" && (
-                            <div className="space-y-8 w-full flex flex-col h-full">
+                            <div className="w-full flex flex-col h-full gap-5">
                                 {/* Camera Settings */}
-                                <Label htmlFor="camera" className="font-medium mb-2 text-base text-primary">Camera</Label>
-                                <Select
-                                    value={videoDevices?.[0]?.deviceId ? videoDevices.find(device => device.deviceId === videoActiveDeviceId)?.deviceId || videoDevices[0].deviceId : "Permission needed"}
-                                    onValueChange={(deviceId) => setVideoActiveDevice(deviceId)}
-                                    disabled={!videoDevices?.[0]?.deviceId}
-                                >
-                                    <SelectTrigger id="camera" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
-                                        <SelectValue placeholder="Select camera" />
-                                    </SelectTrigger>
-                                    <SelectContent align="start" >
-                                        <SelectGroup>
-                                            {videoDevices.map((device) => (
-                                                <SelectItem
-                                                    key={device.deviceId || videoActiveDeviceId}
-                                                    value={device.deviceId || videoActiveDeviceId}
-                                                    className="p-2.5 bg-background cursor-pointer"
-                                                >
-                                                    {device.label || videoActiveDeviceId}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-
-                                <div className="flex justify-between items-center mb-2 max-w-11/12">
-                                    <h3 className="text-[#1a73e8] font-medium">Background Blur</h3>
-                                    <Switch
-                                        id="background-blur"
-                                        defaultChecked={!!videoDevices.length}
-                                        checked={backgroundBlur}
-                                        onCheckedChange={(val) => setVideoPrefs({ backgroundBlur: val })}
+                                <div>
+                                    <Label htmlFor="camera" className="font-medium mb-2 text-base text-primary">Camera</Label>
+                                    <Select
+                                        value={videoDevices?.[0]?.deviceId ? videoDevices.find(device => device.deviceId === videoActiveDeviceId)?.deviceId || videoDevices[0].deviceId : "Permission needed"}
+                                        onValueChange={(deviceId) => setVideoActiveDevice(deviceId)}
                                         disabled={!videoDevices?.[0]?.deviceId}
-                                        className="shadow cursor-pointer"
-                                    />
+                                    >
+                                        <SelectTrigger id="camera" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                            <SelectValue placeholder="Select camera" />
+                                        </SelectTrigger>
+                                        <SelectContent align="start" >
+                                            <SelectGroup>
+                                                {videoDevices.map(({ deviceId, label }) => (
+                                                    <SelectItem
+                                                        key={deviceId || videoActiveDeviceId}
+                                                        value={deviceId || videoActiveDeviceId}
+                                                        className="p-2.5 bg-background cursor-pointer"
+                                                    >
+                                                        {label || videoActiveDeviceId}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                                <p className="text-sm text-[#5f6368]">
-                                    Blurs your background to keep the focus on you.
-                                </p>
 
                                 {/* Resolution settings */}
-                                <Label htmlFor="send_resolution" className="font-medium mb-2 text-base text-primary">Video Send resolution</Label>
-                                <Select
-                                    value={videoResolution.height + "p"}
-                                    onValueChange={(resolution) => {
-                                        setVideoPrefs({ videoResolution: resolutions.find((res) => res.height + "p" === resolution) })
-                                    }}
-                                    disabled={!videoDevices?.[0]?.deviceId}
-                                >
-                                    <SelectTrigger id="send_resolution" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
-                                        <SelectValue placeholder="Select Video Resolution" />
-                                    </SelectTrigger>
-                                    <SelectContent align="start" >
-                                        <SelectGroup>
-                                            {resolutions.map((resolution) => (
-                                                <SelectItem
-                                                    key={resolution.height}
-                                                    value={resolution.height + "p"}
-                                                    className="p-2.5 bg-background cursor-pointer"
-                                                >
-                                                    {resolution.height + 'p'}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <div>
+                                    <Label htmlFor="send_resolution" className="font-medium mb-2 text-base text-primary">Video Send resolution</Label>
+                                    <Select
+                                        value={resolution?.height.toString()}
+                                        onValueChange={(resolution) => {
+                                            const res = resolutions.find((res) => res.height === parseInt(resolution))
+                                            if (!res) return;
+                                            setVideoPrefs({
+                                                resolution: {
+                                                    width: res.width,
+                                                    height: res.height,
+                                                    frameRate: res.encoding.maxFramerate
+                                                }
+                                            })
+                                        }}
+                                        disabled={!videoDevices?.[0]?.deviceId}
+                                    >
+                                        <SelectTrigger id="send_resolution" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                            <SelectValue placeholder="Select Video Resolution" />
+                                        </SelectTrigger>
+                                        <SelectContent align="start" >
+                                            <SelectGroup>
+                                                {resolutions.map(({ height }) => (
+                                                    <SelectItem
+                                                        key={height}
+                                                        value={height.toString()}
+                                                        className="p-2.5 bg-background cursor-pointer"
+                                                    >
+                                                        {height + 'p'}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
 
-                                {/* Codec settings */}
-                                <Label htmlFor="codecs" className="font-medium mb-2 text-base text-primary">Video Codec</Label>
-                                <Select
-                                    value={videoCodec}
-                                    onValueChange={(codec) => setVideoPrefs({ videoCodec: codec as Codecs })}
-                                    disabled={!videoDevices?.[0]?.deviceId}
-                                >
-                                    <SelectTrigger id="codecs" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
-                                        <SelectValue placeholder="Select Video Codec" />
-                                    </SelectTrigger>
-                                    <SelectContent align="start" >
-                                        <SelectGroup>
-                                            {codecss?.map((codec) => (
-                                                <SelectItem
-                                                    key={codec}
-                                                    value={codec}
-                                                    className="p-2.5 bg-background cursor-pointer"
-                                                >
-                                                    {codec}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <div>
+
+                                    {/* Codec settings */}
+                                    <Label htmlFor="codecs" className="font-medium mb-2 text-base text-primary">Video Codec</Label>
+                                    <Select
+                                        value={videoCodec}
+                                        onValueChange={(codec) => setVideoPrefs({ videoCodec: codec as Codecs })}
+                                        disabled={!videoDevices?.[0]?.deviceId}
+                                    >
+                                        <SelectTrigger id="codecs" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                            <SelectValue placeholder="Select Video Codec" />
+                                        </SelectTrigger>
+                                        <SelectContent align="start" >
+                                            <SelectGroup>
+                                                {codecss?.map((codec) => (
+                                                    <SelectItem
+                                                        key={codec}
+                                                        value={codec}
+                                                        className="p-2.5 bg-background cursor-pointer"
+                                                    >
+                                                        {codec}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
 
                                 {/* Frames settings */}
-                                <Label htmlFor="frames" className="font-medium mb-2 text-base text-primary">Video Frames</Label>
-                                <Select
-                                    value={videoFrames.toString()}
-                                    onValueChange={(frames) => setVideoPrefs({ videoFrames: parseInt(frames) })}
-                                    disabled={!videoDevices?.[0]?.deviceId}
-                                >
-                                    <SelectTrigger id="frames" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
-                                        <SelectValue placeholder="Select Video Frames" />
-                                    </SelectTrigger>
-                                    <SelectContent align="start" >
-                                        <SelectGroup>
-                                            {frameRates.map((frames) => (
+                                <div>
+
+                                    <Label htmlFor="frames" className="font-medium mb-2 text-base text-primary">Video Frames</Label>
+                                    <Select
+                                        value={resolution?.frameRate?.toString() || '0 fps'}
+                                        onValueChange={(frames) => {
+                                            const res = resolutions.find((res) => res.encoding.maxFramerate === parseInt(frames))
+                                            if (!res) return;
+                                            setVideoPrefs({
+                                                resolution: {
+                                                    width: res.width,
+                                                    height: res.height,
+                                                    frameRate: res.encoding.maxFramerate
+                                                }
+                                            })
+                                        }}
+                                        disabled={!videoDevices?.[0]?.deviceId}
+                                    >
+                                        <SelectTrigger id="frames" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                            <SelectValue placeholder="Select Video Frames" />
+                                        </SelectTrigger>
+                                        <SelectContent align="start" >
+                                            <SelectGroup>
+                                                {resolutions.map(({ height, encoding: { maxFramerate } }) => (height === resolution?.height &&
+                                                    <SelectItem
+                                                        key={maxFramerate}
+                                                        value={maxFramerate?.toString() || '0'}
+                                                        className="p-2.5 bg-background cursor-pointer"
+                                                    >
+                                                        {maxFramerate + ' fps'}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Facing Mode settings */}
+                                <div>
+
+                                    <Label htmlFor="facing_mode" className="font-medium mb-2 text-base text-primary">Facing Mode</Label>
+                                    <Select
+                                        value={facingMode}
+                                        onValueChange={(facingMode) => setVideoPrefs({ facingMode: facingMode as "user" | "environment" | "left" | "right" })}
+                                    >
+                                        <SelectTrigger id="facing_mode" className="max-w-11/12! w-full! truncate py-6 border-primary cursor-pointer">
+                                            <SelectValue placeholder="Select facing mode" />
+                                        </SelectTrigger>
+                                        <SelectContent align="start" >
+                                            {facingModes.map((facingMode) => (
                                                 <SelectItem
-                                                    key={frames}
-                                                    value={frames.toString()}
+                                                    key={facingMode}
+                                                    value={facingMode}
                                                     className="p-2.5 bg-background cursor-pointer"
                                                 >
-                                                    {frames + ' fps'}
+                                                    {facingMode}
                                                 </SelectItem>
                                             ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         )}
 
@@ -263,13 +287,13 @@ export default function SettingsDialog({ children }: { children: React.ReactNode
                                     </SelectTrigger>
                                     <SelectContent align="start" >
                                         <SelectGroup>
-                                            {audioDevices.map((device) => (
+                                            {audioDevices.map(({ deviceId, label }) => (
                                                 <SelectItem
-                                                    key={device.deviceId || audioActiveDeviceId}
-                                                    value={device.deviceId || audioActiveDeviceId}
+                                                    key={deviceId || audioActiveDeviceId}
+                                                    value={deviceId || audioActiveDeviceId}
                                                     className="p-2.5 bg-background cursor-pointer"
                                                 >
-                                                    {device.label || audioActiveDeviceId}
+                                                    {label || audioActiveDeviceId}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
@@ -299,13 +323,13 @@ export default function SettingsDialog({ children }: { children: React.ReactNode
                                         </SelectTrigger>
                                         <SelectContent align="start" >
                                             <SelectGroup>
-                                                {speakerDevices.map((device) => (
+                                                {speakerDevices.map(({ deviceId, label }) => (
                                                     <SelectItem
-                                                        key={device.deviceId || speakerActiveDeviceId}
-                                                        value={device.deviceId || speakerActiveDeviceId}
+                                                        key={deviceId || speakerActiveDeviceId}
+                                                        value={deviceId || speakerActiveDeviceId}
                                                         className="p-2.5 bg-background cursor-pointer"
                                                     >
-                                                        {device.label || speakerActiveDeviceId}
+                                                        {label || speakerActiveDeviceId}
                                                     </SelectItem>
                                                 ))}
                                             </SelectGroup>

@@ -8,9 +8,8 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 import { FormEvent, memo, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MessageSquare, Mic, MicOff, Send, Users, Video, VideoOff, X } from "lucide-react";
+import { ReceivedChatMessage, useChat, useParticipants } from "@livekit/components-react";
 import useSidebarOpenStore from "@/store/sideBar";
-import { ReceivedChatMessage, useChat } from "@livekit/components-react";
-import { useParticipants } from "@livekit/components-react";
 
 
 const SideBar = memo(() => {
@@ -31,8 +30,10 @@ const SideBar = memo(() => {
         e.preventDefault()
         const message = messageRef.current?.value || ""
         if (!message.trim()) return
+        messageRef.current!.disabled = true
+        await send(message)
         messageRef.current!.value = ""
-        send(message)
+        messageRef.current!.disabled = false
     }
 
     return (
@@ -80,26 +81,6 @@ const SideBar = memo(() => {
                                         {isMicrophoneEnabled ? <Mic size="18" /> : <MicOff size="18" />}
                                         {isCameraEnabled ? <Video size="18" /> : <VideoOff size="18" />}
                                     </div>
-                                    {/* <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                                <MoreHorizontal size="6" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem>
-                                                {participant.name ? "Unmute" : "Mute"}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                // onClick={() => removeParticipant(participant.id)}
-                                                className="text-red-500"
-                                            >
-                                                <LogOut className="h-4 w-4 mr-2" />
-                                                Remove
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu> */}
                                 </div>
                             </div>
                         ))}

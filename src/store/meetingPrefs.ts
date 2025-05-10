@@ -4,13 +4,13 @@ import { persist } from "zustand/middleware";
 export type Codecs = 'vp8' | 'h264' | 'vp9' | 'av1';
 
 interface VideoPrefs {
-    videoResolution: {
+    resolution?: {
         width: number;
         height: number;
+        frameRate?: number;
     };
-    videoFrames: number;
+    facingMode: "user" | "environment" | "left" | "right";
     videoCodec: Codecs;
-    backgroundBlur: boolean;
 }
 
 interface MeetingPrefs {
@@ -29,13 +29,8 @@ const useMeetingPrefsStore = create<MeetingPrefsState>()(
     persist(
         (set) => ({
             video: {
-                videoResolution: {
-                    width: 1920,
-                    height: 1080,
-                },
-                videoFrames: 30,
+                facingMode: 'user',
                 videoCodec: 'vp8',
-                backgroundBlur: false,
             },
             meeting: {
                 isVideoEnabled: false,

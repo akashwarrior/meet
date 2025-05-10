@@ -9,6 +9,7 @@ import * as motion from "motion/react-m"
 import Participant from "./participant"
 import { useParticipants } from "@livekit/components-react"
 import { useMediaQuery } from "usehooks-ts"
+import type { LocalParticipant, RemoteParticipant } from "livekit-client"
 
 const loadFeatures = () => import("@/components/domAnimation").then(res => res.default)
 
@@ -49,59 +50,67 @@ const VideoGrid = memo(() => {
 
     return (
         <LazyMotion features={loadFeatures}>
-            <div className="flex-1 flex flex-grow overflow-hidden">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                    className={cn("h-full w-full p-2 grid gap-2 ", getGridClass)}
-                    layout
-                >
-                    {currentParticipants.map(
-                        ({ sid, identity, name }) =>
-                            <Participant
-                                key={sid}
-                                identity={identity}
-                                userName={name || "Unknown"}
+            <MemoizedParticipant currentParticipants={currentParticipants} getGridClass={getGridClass} />
+
+            {totalPages > 1 && (
+                <div className="absolute bottom-20 left-0 w-full flex justify-center items-center space-x-2 z-50">
+                    <Button
+                        size="icon"
+                        className="rounded-full bg-primary text-white"
+                        onClick={() => setCurrentPage((prev) => prev - 1)}
+                        disabled={currentPage === 0}
+                    >
+                        <LucideChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    <div className="flex space-x-1">
+                        {Array.from({ length: totalPages }, (_, index) => (
+                            <motion.div
+                                key={index}
+                                className={cn("h-2 w-2 rounded-full shadow border", currentPage === index ? "bg-primary" : "bg-gray-400")}
                             />
-                    )}
-                </motion.div>
-
-                {totalPages > 1 && (
-                    <div className="absolute bottom-20 left-0 w-full flex justify-center items-center space-x-2 z-50">
-                        <Button
-                            size="icon"
-                            className="rounded-full bg-primary text-white"
-                            onClick={() => setCurrentPage((prev) => prev - 1)}
-                            disabled={currentPage === 0}
-                        >
-                            <LucideChevronLeft className="h-4 w-4" />
-                        </Button>
-
-                        <div className="flex space-x-1">
-                            {Array.from({ length: totalPages }, (_, index) => (
-                                <motion.div
-                                    key={index}
-                                    className={cn("h-2 w-2 rounded-full shadow border", currentPage === index ? "bg-primary" : "bg-gray-400")}
-                                />
-                            ))}
-                        </div>
-
-                        <Button
-                            size="icon"
-                            className="rounded-full bg-primary text-white"
-                            onClick={() => setCurrentPage((prev) => prev + 1)}
-                            disabled={currentPage === totalPages - 1}
-                        >
-                            <LucideChevronRight className="h-4 w-4" />
-                        </Button>
+                        ))}
                     </div>
-                )}
-            </div>
+
+                    <Button
+                        size="icon"
+                        className="rounded-full bg-primary text-white"
+                        onClick={() => setCurrentPage((prev) => prev + 1)}
+                        disabled={currentPage === totalPages - 1}
+                    >
+                        <LucideChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
         </LazyMotion>
     )
 });
 
 VideoGrid.displayName = "VideoGrid"
 export default VideoGrid
+
+const MemoizedParticipant = memo(({ currentParticipants, getGridClass }: { currentParticipants: (RemoteParticipant | LocalParticipant)[], getGridClass: string }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className={cn("h-full w-full p-2 grid gap-2 ", getGridClass)}
+            layout
+        >
+            {currentParticipants.map(
+                ({ sid, identity, name, isCameraEnabled, isMicrophoneEnabled }) =>
+                    <Participant
+                        key={sid}
+                        identity={identity}
+                        userName={name || "Unknown"}
+                        isCameraEnabled={isCameraEnabled}
+                        isMicrophoneEnabled={isMicrophoneEnabled}
+                    />
+            )}
+        </motion.div>
+    )
+})
+
+MemoizedParticipant.displayName = "MemoizedParticipant"

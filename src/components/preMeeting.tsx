@@ -1,17 +1,17 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { toast } from "sonner"
-import { useSession } from "next-auth/react"
-import { EllipsisVertical, Mic, MicOff, Video, VideoOff } from "lucide-react"
-import useMeetingPrefsStore from "@/store/meetingPrefs"
-import { useMediaDeviceSelect, useRoomContext } from "@livekit/components-react";
-import { ConnectionState } from "livekit-client";
-import Header from "@/components/header"
+import { useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
+import Header from "@/components/header"
+import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useSession } from "next-auth/react"
+import { ConnectionState, Track } from "livekit-client";
 import { useMediaQuery } from "usehooks-ts"
+import { EllipsisVertical, Mic, MicOff, Video, VideoOff } from "lucide-react"
+import { useMediaDeviceSelect, useRoomContext, usePreviewTracks } from "@livekit/components-react";
+import useMeetingPrefsStore from "@/store/meetingPrefs"
 
 const PermissionDialog = dynamic(() => import("./permissionDialog").then((mod) => mod.default), {
     ssr: false,
@@ -23,55 +23,33 @@ const SettingsDialog = dynamic(() => import("./settingsDialog").then((mod) => mo
     ssr: false,
 })
 
-export default function PreMeeting({
-    meetingId,
-    handleConnect
-}: { meetingId: string, handleConnect: () => void }) {
-    const { connect, state } = useRoomContext();
-    const { data: session } = useSession()
+export default function PreMeeting({ meetingId }: { meetingId: string }) {
+    const [render, setRender] = useState(false)
     const isSmallScreen = useMediaQuery("(max-width: 1024px)")
-    const nameRef = useRef<HTMLInputElement>(null)
-    const streamRef = useRef<MediaStream | null>(null)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const isVideoEnabled = useMeetingPrefsStore(state => state.meeting.isVideoEnabled);
-    const setMeetingPrefs = useMeetingPrefsStore(state => state.setMeetingPrefs);
     const [showDialog, setShowDialog] = useState(false)
-    const { activeDeviceId } = useMediaDeviceSelect({
+
+    // Video Capture Options
+    const { facingMode, resolution } = useMeetingPrefsStore(state => state.video)
+    const { activeDeviceId: deviceId } = useMediaDeviceSelect({
         kind: "videoinput",
         requestPermissions: false,
     });
-    const [render, setRender] = useState(false)
+
+    const tracks = usePreviewTracks({ video: isVideoEnabled ? { deviceId, facingMode, resolution } : false });
+    const videoTrack = useMemo(() => tracks?.filter((track) => track.kind === Track.Kind.Video)[0], [tracks]);
 
     useEffect(() => {
-        setRender(true)
-    }, [])
-
-    useEffect(() => {
-        if (isVideoEnabled) {
-            navigator.mediaDevices.getUserMedia({
-                video: {
-                    deviceId: activeDeviceId === "default" ? undefined : { exact: activeDeviceId }
-                }
-            }).then((stream) => {
-                streamRef.current = stream
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream
-                }
-            }).catch((error) => {
-                console.error("Error getting media stream:", error)
-                toast.error("Media Error", {
-                    description: "Could not access selected devices. Please try different ones.",
-                })
-            })
+        if (videoRef.current && videoTrack) {
+            videoTrack.unmute();
+            videoTrack.attach(videoRef.current);
         }
-
         return () => {
-            streamRef.current?.getTracks().forEach((track) => {
-                track.stop()
-                streamRef.current?.removeTrack(track)
-            })
-        }
-    }, [isVideoEnabled, activeDeviceId])
+            videoTrack?.detach();
+        };
+    }, [videoTrack]);
+
 
     useEffect(() => {
         if (navigator.permissions) {
@@ -80,39 +58,11 @@ export default function PreMeeting({
             Promise.all([cameraResult, micResult]).then(([cameraResult, micResult]) => {
                 if (cameraResult.state === "prompt" && micResult.state === "prompt") {
                     setShowDialog(true)
-                    setMeetingPrefs({
-                        isVideoEnabled: false,
-                        isAudioEnabled: false,
-                    })
                 }
             })
         }
-    }, [setMeetingPrefs])
-
-
-    // Join the meeting
-    const joinMeeting = async () => {
-        const username = nameRef.current?.value.trim()
-        if (!username) {
-            toast.error("Name Required", {
-                description: "Please enter your name to join the meeting",
-            })
-            return
-        }
-        try {
-            const res = await fetch(`/api/token?meetingId=${meetingId}&username=${username}`);
-            const data = await res.json();
-            if (data.token) {
-                await connect(process.env.NEXT_PUBLIC_LIVEKIT_URL as string, data.token);
-                handleConnect()
-            } else {
-                throw new Error("Failed to connect to the server");
-            }
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to connect to the server");
-        }
-    }
+        setRender(true)
+    }, [])
 
     return (
         <div className="min-h-[90vh] bg-background flex flex-col items-center justify-center">
@@ -139,32 +89,11 @@ export default function PreMeeting({
                     </div>
                     {(render && !isSmallScreen) && <DeviceSelection />}
                 </div>
-
-                <div className="w-full max-w-xs flex flex-col gap-7 items-center">
-                    <h1 className="text-2xl text-foreground">What&apos;s your name?</h1>
-                    <Input
-                        type="text"
-                        name="name"
-                        placeholder="Your name"
-                        ref={nameRef}
-                        defaultValue={session?.user?.name || ""}
-                        disabled={state === ConnectionState.Connecting}
-                        className="border rounded-md h-full bg-background focus-visible:ring-2 focus-visible:ring-primary transition-all duration-200 p-4.5 md:text-base"
-                    />
-
-                    <Button
-                        variant="default"
-                        className="text-base font-bold rounded-full px-16 py-7 mt-2"
-                        onClick={joinMeeting}
-                        disabled={state === ConnectionState.Connecting}
-                    >
-                        {state === ConnectionState.Connecting ? "Joining..." : "Join Meeting"}
-                    </Button>
-                </div>
+                <JoinMeeting meetingId={meetingId} />
             </main>
 
             {/* Permission Dialog */}
-            {(render && showDialog) && <PermissionDialog />}
+            {showDialog && <PermissionDialog />}
         </div >
     )
 }
@@ -174,28 +103,6 @@ const VideoControls = () => {
     const isAudioEnabled = useMeetingPrefsStore(state => state.meeting.isAudioEnabled);
     const isVideoEnabled = useMeetingPrefsStore(state => state.meeting.isVideoEnabled);
     const setMeetingPrefs = useMeetingPrefsStore(state => state.setMeetingPrefs);
-    const streamRef = useRef<MediaStream | null>(null)
-
-    useEffect(() => {
-        if (isAudioEnabled) {
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then((stream) => {
-                    streamRef.current = stream
-                })
-                .catch((error) => {
-                    console.error("Error getting media stream:", error)
-                    toast.error("Media Error", {
-                        description: "Could not access selected devices. Please try different ones.",
-                    })
-                });
-        }
-        return () => {
-            streamRef.current?.getTracks().forEach((track) => {
-                track.stop()
-                streamRef.current?.removeTrack(track)
-            })
-        }
-    }, [isAudioEnabled])
 
     return (
         <>
@@ -229,5 +136,83 @@ const VideoControls = () => {
                 </SettingsDialog>
             </div>
         </>
+    )
+}
+
+const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
+    const { connect, state, options, localParticipant } = useRoomContext();
+    const { data: session } = useSession()
+    const nameRef = useRef<HTMLInputElement>(null)
+    const { isVideoEnabled, isAudioEnabled } = useMeetingPrefsStore(state => state.meeting);
+    const { facingMode, resolution, videoCodec } = useMeetingPrefsStore(state => state.video)
+    const { activeDeviceId: videoDeviceId } = useMediaDeviceSelect({
+        kind: "videoinput",
+        requestPermissions: false,
+    });
+    const { activeDeviceId: audioDeviceId } = useMediaDeviceSelect({
+        kind: "audioinput",
+        requestPermissions: false,
+    });
+
+    // Join the meeting
+    const joinMeeting = async () => {
+        const username = nameRef.current?.value.trim()
+        if (!username) {
+            toast.error("Name Required", {
+                description: "Please enter your name to join the meeting",
+            })
+            return
+        }
+        try {
+            const res = await fetch(`/api/token?meetingId=${meetingId}&username=${username}`);
+            const data = await res.json();
+            if (data.token) {
+                options.publishDefaults!.videoCodec = videoCodec
+                options.videoCaptureDefaults!.facingMode = facingMode
+                options.videoCaptureDefaults!.deviceId = videoDeviceId
+                options.videoCaptureDefaults!.resolution = resolution
+                await connect(process.env.NEXT_PUBLIC_LIVEKIT_URL as string, data.token);
+                await localParticipant.setCameraEnabled(isVideoEnabled, {
+                    deviceId: videoDeviceId,
+                    facingMode: facingMode,
+                    resolution: resolution
+                });
+                await localParticipant.setMicrophoneEnabled(isAudioEnabled, {
+                    deviceId: audioDeviceId,
+                    channelCount: 2,
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                });
+            } else {
+                throw new Error("Failed to connect to the server");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to connect to the server");
+        }
+    }
+
+    return (
+        <div className="w-full max-w-xs flex flex-col gap-7 items-center">
+            <h1 className="text-2xl text-foreground">What&apos;s your name?</h1>
+            <Input
+                type="text"
+                name="name"
+                placeholder="Your name"
+                ref={nameRef}
+                defaultValue={session?.user?.name || ""}
+                disabled={state === ConnectionState.Connecting}
+                className="border rounded-md h-full bg-background focus-visible:ring-2 focus-visible:ring-primary transition-all duration-200 p-4.5 md:text-base"
+            />
+
+            <Button
+                variant="default"
+                className="text-base font-bold rounded-full px-16 py-7 mt-2"
+                onClick={joinMeeting}
+                disabled={state === ConnectionState.Connecting}
+            >
+                {state === ConnectionState.Connecting ? "Joining..." : "Join Meeting"}
+            </Button>
+        </div>
     )
 }
