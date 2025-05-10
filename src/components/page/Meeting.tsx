@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
+import dynamic from "next/dynamic";
 import PreMeeting from "../preMeeting";
 import { RoomContext } from "@livekit/components-react";
-import { Room, ConnectionState, VideoCaptureOptions } from "livekit-client";
-import dynamic from "next/dynamic";
-import useMeetingPrefsStore from "@/store/meetingPrefs";
+import { Room, ConnectionState, AudioPresets } from "livekit-client";
 
 const VideoGrid = dynamic(() => import("@/components/videoGrid"), { ssr: false })
 const SideBar = dynamic(() => import("@/components/sideBar"), { ssr: false })
@@ -14,42 +13,30 @@ const MeetingFooter = dynamic(() => import("@/components/meetingFooter"), { ssr:
 
 export default function Meeting({ meetingId }: { meetingId: string }) {
     const [render, setRender] = useState(false)
-    const videoPrefs = useMeetingPrefsStore(state => state.video)
-    const videoCaptureDefaults: VideoCaptureOptions = useMemo(() => ({
-        facingMode: 'user',
-        resolution: {
-            width: videoPrefs.videoResolution.width,
-            height: videoPrefs.videoResolution.height,
-            frameRate: videoPrefs.videoFrames,
-        },
-    }), [videoPrefs])
     const [roomInstance] = useState<Room>(() => new Room({
-        adaptiveStream: false,
-        dynacast: false,
-        videoCaptureDefaults,
-        stopLocalTrackOnUnpublish: true,
+        adaptiveStream: true,
+        dynacast: true,
         publishDefaults: {
-            videoCodec: videoPrefs.videoCodec,
             scalabilityMode: 'L1T1',
             simulcast: false,
+            audioPreset: AudioPresets.musicHighQualityStereo,
+            dtx: false,
+            red: false,
         }
     }));
 
     useEffect(() => {
+        roomInstance.on('connected', () => setRender(!render));
+        roomInstance.on('disconnected', () => setRender(!render));
         return () => {
             roomInstance.disconnect();
         };
     }, [roomInstance])
 
-    useEffect(() => {
-        roomInstance.options.videoCaptureDefaults = videoCaptureDefaults
-        roomInstance.options.publishDefaults!.videoCodec = videoPrefs.videoCodec
-    }, [videoPrefs, videoCaptureDefaults])
-
     return (
         <RoomContext.Provider value={roomInstance}>
             {(roomInstance.state !== ConnectionState.Connected) ?
-                <PreMeeting meetingId={meetingId} handleConnect={() => { setRender(!render) }} />
+                <PreMeeting meetingId={meetingId} />
                 :
                 <main className="h-screen flex flex-col bg-background">
                     <MeetingHeader meetingId={meetingId} />

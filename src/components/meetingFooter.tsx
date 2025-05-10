@@ -8,12 +8,22 @@ import { useRouter } from "next/navigation";
 import LiveClock from "./liveClock";
 import useSidebarOpenStore from "@/store/sideBar";
 import { MessageSquare, Mic, MicOff, Phone, Users, Video, VideoOff } from "lucide-react";
-import { DisconnectButton, useLocalParticipant } from "@livekit/components-react";
+import { DisconnectButton, useLocalParticipant, useMediaDeviceSelect } from "@livekit/components-react";
+import useMeetingPrefsStore from "@/store/meetingPrefs";
 
 const MeetingFooter = memo(() => {
     const router = useRouter()
-    const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore()
-    const { isCameraEnabled, isMicrophoneEnabled, localParticipant } = useLocalParticipant()
+    const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore();
+    const { isCameraEnabled, isMicrophoneEnabled, localParticipant } = useLocalParticipant();
+    const { facingMode, resolution } = useMeetingPrefsStore(state => state.video);
+    const { activeDeviceId: videoDeviceId } = useMediaDeviceSelect({
+        kind: "videoinput",
+        requestPermissions: false,
+    });
+    const { activeDeviceId: audioDeviceId } = useMediaDeviceSelect({
+        kind: "audioinput",
+        requestPermissions: false,
+    });
 
     // Toggle sidebar
     const toggleSidebar = (tab: "participants" | "chat" | null) => {
@@ -26,7 +36,11 @@ const MeetingFooter = memo(() => {
 
     const toggleVideo = async () => {
         try {
-            await localParticipant.setCameraEnabled(!isCameraEnabled);
+            await localParticipant.setCameraEnabled(!isCameraEnabled, {
+                deviceId: videoDeviceId,
+                facingMode: facingMode,
+                resolution: resolution
+            });
         } catch (err) {
             console.log(err)
             toast.error("Failed to toggle video", {
@@ -37,7 +51,9 @@ const MeetingFooter = memo(() => {
 
     const toggleMic = async () => {
         try {
-            await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
+            await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled, {
+                deviceId: audioDeviceId
+            });
         } catch (err) {
             toast.error("Failed to toggle audio", {
                 description: err instanceof Error ? err.message : "Error toggling audio"
@@ -98,7 +114,7 @@ const MeetingFooter = memo(() => {
                     <Users className="h-5 w-5" />
                 </Button>
 
-                <DisconnectButton className="flex items-center justify-center rounded-full h-12 px-4 bg-destructive hover:bg-destructive/50! cursor-pointer focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60" onClick={leaveCall}>
+                <DisconnectButton className="flex items-center justify-center rounded-full h-12 px-4 bg-destructive hover:bg-destructive/50! cursor-pointer dark:bg-destructive/60 text-white" onClick={leaveCall}>
                     <Phone className="h-5 w-5 md:mr-2" />
                     <span className="hidden md:inline">Leave</span>
                 </DisconnectButton>
