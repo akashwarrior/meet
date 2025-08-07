@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { getServerSession } from "next-auth/next";
-import prisma from "@/lib/prisma"
+import prisma from "@/lib/db"
 import { NEXT_AUTH } from "@/lib/auth";
 
 const ERROR_CAUSE = "WRONG_INPUTS";

@@ -1,5 +1,5 @@
 import Meeting from "@/components/page/Meeting"
-import prisma from "@/lib/prisma"
+import prisma from "@/lib/db"
 import { redirect } from "next/navigation"
 
 export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
