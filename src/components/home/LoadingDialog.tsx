@@ -1,15 +1,19 @@
-'use client'
+"use client";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { motion } from "motion/react"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { motion } from "motion/react";
 
 type LoadingDialogProps = {
-  open: boolean
-  message: string
-  subtext?: string
-}
+  open: boolean;
+  message: string;
+  subtext?: string;
+};
 
-export default function LoadingDialog({ open, message, subtext = "This will only take a moment" }: LoadingDialogProps) {
+export default function LoadingDialog({
+  open,
+  message,
+  subtext = "This will only take a moment",
+}: LoadingDialogProps) {
   return (
     <Dialog open={open}>
       <DialogTitle />
@@ -28,7 +32,5 @@ export default function LoadingDialog({ open, message, subtext = "This will only
         </motion.div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-
-
