@@ -1,19 +1,24 @@
-'use client'
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { motion } from "motion/react"
-import { Video, Keyboard, ChevronDown } from "lucide-react"
-import { RefObject } from "react"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { motion } from "motion/react";
+import { Video, Keyboard, ChevronDown } from "lucide-react";
+import { RefObject } from "react";
 
 type MeetingActionsProps = {
-  loading: boolean
-  meetingCodeRef: RefObject<HTMLInputElement | null>
-  onStartInstant: () => void
-  onCreateLater: () => void
-  onJoin: () => void
-}
+  loading: boolean;
+  meetingCodeRef: RefObject<HTMLInputElement | null>;
+  onStartInstant: () => void;
+  onCreateLater: () => void;
+  onJoin: () => void;
+};
 
 export default function MeetingActions({
   loading,
@@ -75,7 +80,5 @@ export default function MeetingActions({
         Join
       </Button>
     </div>
-  )
+  );
 }
-
-

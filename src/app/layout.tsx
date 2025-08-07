@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ReactNode } from "react";
-import localFont from 'next/font/local'
+import localFont from "next/font/local";
 import Providers from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { getServerSession } from "next-auth/next";
@@ -10,34 +10,36 @@ import "./globals.css";
 const myFont = localFont({
   src: [
     {
-      weight: '400',
-      path: '../fonts/regular.woff2',
+      weight: "400",
+      path: "../fonts/regular.woff2",
     },
     {
-      weight: '700',
-      path: '../fonts/bold.woff2',
+      weight: "700",
+      path: "../fonts/bold.woff2",
     },
   ],
-})
+});
 
 export const metadata: Metadata = {
-  icons: { icon: '/icon.svg' },
+  icons: { icon: "/icon.svg" },
   title: "Meet - Professional Video Conferencing",
-  description: "Connect securely with end-to-end encryption. Host video meetings and collaborate with just a few clicks.",
-  keywords: "video conferencing, online meetings, collaboration, end-to-end encryption, secure communication",
-}
+  description:
+    "Connect securely with end-to-end encryption. Host video meetings and collaborate with just a few clicks.",
+  keywords:
+    "video conferencing, online meetings, collaboration, end-to-end encryption, secure communication",
+};
 
-export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const session = await getServerSession(NEXT_AUTH);
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={myFont.className}>
-        <Providers session={session}>
-          {children}
-        </Providers>
+        <Providers session={session}>{children}</Providers>
         <Toaster richColors theme="light" />
       </body>
-    </html >
+    </html>
   );
 }

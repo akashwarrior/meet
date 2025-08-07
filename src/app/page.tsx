@@ -1,43 +1,41 @@
-'use client';
+"use client";
 
 import Header from "@/components/header";
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useRef, useState } from "react"
-import { toast } from "sonner"
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import MeetingActions from "@/components/home/MeetingActions";
 import MeetingInfoDialog from "@/components/home/MeetingInfoDialog";
 import LoadingDialog from "@/components/home/LoadingDialog";
 import { extractMeetingId } from "@/lib/utils";
 
-
 export default function Home() {
-  const router = useRouter()
-  const [meetingLink, setMeetingLink] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const meetingCodeRef = useRef<HTMLInputElement>(null)
+  const router = useRouter();
+  const [meetingLink, setMeetingLink] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const meetingCodeRef = useRef<HTMLInputElement>(null);
 
   const generateMeetingLink = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const response = await fetch("/api/meetings", { method: "POST" });
       const res = await response.json();
       if (response.ok) {
-        return res.link as string
+        return res.link as string;
       } else {
         toast.error(res.error, {
           description: "Please try again later",
-        })
-        return null
+        });
+        return null;
       }
     } catch (error) {
-      toast.error("Failed to create meeting", { description: String(error) })
-      return null
+      toast.error("Failed to create meeting", { description: String(error) });
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
+  };
 
   const startInstantMeeting = async () => {
     const link = await generateMeetingLink();
@@ -45,34 +43,32 @@ export default function Home() {
       toast.success("Meeting created successfully", {
         description: "Redirecting to meeting...",
       });
-      const id = extractMeetingId(link)
-      router.push(`/meeting/${id}`)
+      const id = extractMeetingId(link);
+      router.push(`/meeting/${id}`);
     }
-  }
-
+  };
 
   const scheduleForLater = async () => {
     const link = await generateMeetingLink();
     if (link) {
       setMeetingLink(link);
     }
-  }
-
+  };
 
   const joinMeeting = async () => {
-    const meetingCode = meetingCodeRef.current?.value || ""
-    const id = extractMeetingId(meetingCode)
+    const meetingCode = meetingCodeRef.current?.value || "";
+    const id = extractMeetingId(meetingCode);
 
     if (!id) {
-      meetingCodeRef.current?.focus()
+      meetingCodeRef.current?.focus();
       toast.error("Meeting code required", {
         description: "Please enter a meeting code to join",
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
       const response = await fetch(`/api/meetings/${id}`);
       const res = await response.json();
 
@@ -80,24 +76,22 @@ export default function Home() {
         toast.success(res.message, {
           description: "Redirecting to meeting...",
         });
-        router.push(`/meeting/${id}`)
+        router.push(`/meeting/${id}`);
       } else {
         toast.error(res.error, {
           description: "Please check the meeting code and try again",
-        })
+        });
       }
     } catch (error) {
       toast.error("Failed to join meeting", {
         description: String(error),
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
+  };
 
   // copy is handled within MeetingInfoDialog
-
 
   return (
     <main className="bg-background relative">
@@ -125,7 +119,7 @@ export default function Home() {
                 onClick={() => {
                   toast.info("This feature is not available yet", {
                     description: "Please check back later",
-                  })
+                  });
                 }}
                 className="text-primary hover:underline cursor-pointer"
               >
@@ -156,8 +150,8 @@ export default function Home() {
 
       <LoadingDialog
         open={loading}
-        message={`${!(meetingCodeRef.current?.value) ? "Creating your" : "Finding"} meeting...`}
+        message={`${!meetingCodeRef.current?.value ? "Creating your" : "Finding"} meeting...`}
       />
     </main>
-  )
+  );
 }

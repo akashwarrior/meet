@@ -27,27 +27,37 @@ Follow the steps below to run Meet locally:
 git clone https://github.com/akashwarrior/meet.git
 cd meet
 ```
+
 ### 2. Install dependencies
+
 ```bash
 npm install
 ```
+
 ### 3. Create environment variables
+
 ```bash
 cp .env.example .env
 ```
+
 ### 4. Generate Prisma client
+
 ```bash
 npm run generate
 ```
+
 ### 5. Start the app locally
+
 ```bash
 npm run dev
 ```
+
 Your app will be running at: http://localhost:3000
 
 ---
 
 ## 🧠 Tech Stack
+
 ##### - Frontend: Next.js, React, Tailwind CSS
 
 ##### - Backend: Node.js, WebSocket (WS), Prisma, PostgreSQL
@@ -58,9 +68,7 @@ Your app will be running at: http://localhost:3000
 
 ##### - ORM: Prisma
 
-
 ---
-
 
 ## 📁 Project Structure
 
