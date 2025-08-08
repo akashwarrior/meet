@@ -1,51 +1,37 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import Header from "@/components/header";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import { ConnectionState, Track } from "livekit-client";
-import { useMediaQuery } from "usehooks-ts";
-import { EllipsisVertical, Mic, MicOff, Video, VideoOff } from "lucide-react";
+import useMeetingPrefsStore from "@/store/meetingPrefs";
+import PermissionDialog from "./permissionDialog";
+import DeviceSelection from "./deviceSelection";
+import SettingsDialog from "./settingsDialog";
+import {
+  EllipsisVertical,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff
+} from "lucide-react";
 import {
   useMediaDeviceSelect,
   useRoomContext,
   usePreviewTracks,
 } from "@livekit/components-react";
-import useMeetingPrefsStore from "@/store/meetingPrefs";
-
-const PermissionDialog = dynamic(
-  () => import("./permissionDialog").then((mod) => mod.default),
-  {
-    ssr: false,
-  },
-);
-const DeviceSelection = dynamic(
-  () => import("./deviceSelection").then((mod) => mod.default),
-  {
-    ssr: false,
-  },
-);
-const SettingsDialog = dynamic(
-  () => import("./settingsDialog").then((mod) => mod.default),
-  {
-    ssr: false,
-  },
-);
 
 export default function PreMeeting({ meetingId }: { meetingId: string }) {
-  const [render, setRender] = useState(false);
-  const isSmallScreen = useMediaQuery("(max-width: 1024px)");
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const meeting = useMeetingPrefsStore(state => state.meeting)
   const isVideoEnabled = useMeetingPrefsStore(
     (state) => state.meeting.isVideoEnabled,
   );
   const [showDialog, setShowDialog] = useState(false);
 
-  // Video Capture Options
   const { facingMode, resolution } = useMeetingPrefsStore(
     (state) => state.video,
   );
@@ -57,12 +43,10 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
   const tracks = usePreviewTracks({
     video: isVideoEnabled ? { deviceId, facingMode, resolution } : false,
   });
-  const videoTrack = useMemo(
-    () => tracks?.filter((track) => track.kind === Track.Kind.Video)[0],
-    [tracks],
-  );
 
   useEffect(() => {
+    const videoTrack = tracks?.filter((track) => track.kind === Track.Kind.Video)[0]
+
     if (videoRef.current && videoTrack) {
       videoTrack.unmute();
       videoTrack.attach(videoRef.current);
@@ -70,7 +54,8 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
     return () => {
       videoTrack?.detach();
     };
-  }, [videoTrack]);
+  }, [tracks]);
+
 
   useEffect(() => {
     if (navigator.permissions) {
@@ -84,8 +69,12 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
         },
       );
     }
-    setRender(true);
+
+    return () => {
+      tracks?.forEach((track) => track.detach());
+    };
   }, []);
+
 
   return (
     <div className="min-h-[90vh] bg-background flex flex-col items-center justify-center">
@@ -108,12 +97,11 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
             )}
             <VideoControls />
           </div>
-          {render && !isSmallScreen && <DeviceSelection />}
+          {(meeting.isVideoEnabled || meeting.isAudioEnabled) && <DeviceSelection />}
         </div>
         <JoinMeeting meetingId={meetingId} />
       </main>
 
-      {/* Permission Dialog */}
       {showDialog && <PermissionDialog />}
     </div>
   );
@@ -129,6 +117,8 @@ const VideoControls = () => {
   const setMeetingPrefs = useMeetingPrefsStore(
     (state) => state.setMeetingPrefs,
   );
+
+  const meeting = useMeetingPrefsStore(state => state.meeting)
 
   return (
     <>
@@ -159,7 +149,7 @@ const VideoControls = () => {
       </div>
 
       <div className="absolute top-0 left-0 right-0 flex bg-gradient-to-b from-black/50 to-transparent p-3 justify-end items-center">
-        <SettingsDialog>
+        {(meeting.isVideoEnabled || meeting.isAudioEnabled) && <SettingsDialog>
           <Button
             variant="ghost"
             size="icon"
@@ -167,7 +157,7 @@ const VideoControls = () => {
           >
             <EllipsisVertical className="w-5! h-5!" />
           </Button>
-        </SettingsDialog>
+        </SettingsDialog>}
       </div>
     </>
   );
@@ -192,7 +182,6 @@ const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
     requestPermissions: false,
   });
 
-  // Join the meeting
   const joinMeeting = async () => {
     const username = nameRef.current?.value.trim();
     if (!username) {
