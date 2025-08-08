@@ -4,15 +4,11 @@ import { cn } from "@/lib/utils";
 import { memo, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LucideChevronLeft, LucideChevronRight } from "lucide-react";
-import { LazyMotion } from "motion/react";
-import * as motion from "motion/react-m";
+import { motion } from "motion/react";
 import Participant from "./participant";
 import { useParticipants } from "@livekit/components-react";
 import { useMediaQuery } from "usehooks-ts";
 import type { LocalParticipant, RemoteParticipant } from "livekit-client";
-
-const loadFeatures = () =>
-  import("@/components/domAnimation").then((res) => res.default);
 
 const VideoGrid = memo(() => {
   const [currentPage, setCurrentPage] = useState(0);
@@ -48,7 +44,7 @@ const VideoGrid = memo(() => {
   }, [currentParticipants.length]);
 
   return (
-    <LazyMotion features={loadFeatures}>
+    <>
       <MemoizedParticipant
         currentParticipants={currentParticipants}
         getGridClass={getGridClass}
@@ -87,7 +83,7 @@ const VideoGrid = memo(() => {
           </Button>
         </div>
       )}
-    </LazyMotion>
+    </>
   );
 });
 

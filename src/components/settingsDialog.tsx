@@ -25,15 +25,11 @@ import {
   SelectValue,
 } from "./ui/select";
 
-export default function SettingsDialog({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SettingsDialog({ children }: { children: React.ReactNode }) {
   const { resolution, videoCodec, facingMode } = useMeetingPrefsStore(
     (state) => state.video,
   );
-  const setVideoPrefs = useMeetingPrefsStore((state) => state.setVideoPrefs);
+  const { setVideoPrefs } = useMeetingPrefsStore();
 
   const {
     devices: audioDevices,
@@ -101,7 +97,7 @@ export default function SettingsDialog({
         toast.error("Error getting devices. Please check your permissions.");
       }
     })();
-  }, [videoDevices, setVideoPrefs]);
+  }, [videoDevices]);
 
   return (
     <Dialog defaultOpen={false}>
@@ -120,7 +116,6 @@ export default function SettingsDialog({
           </DialogClose>
         </DialogTitle>
         <div className="flex flex-1">
-          {/* Left sidebar */}
           <div className="flex flex-col gap-2 select-none">
             <Button
               variant={activeTab === "video" ? "default" : "ghost"}
@@ -158,12 +153,9 @@ export default function SettingsDialog({
             </Button>
           </div>
 
-          {/* Right content */}
           <div className="px-6 py-3 w-full h-full">
-            {/* Video Settings */}
             {activeTab === "video" && (
               <div className="w-full flex flex-col h-full gap-5">
-                {/* Camera Settings */}
                 <div>
                   <Label
                     htmlFor="camera"
@@ -175,8 +167,8 @@ export default function SettingsDialog({
                     value={
                       videoDevices?.[0]?.deviceId
                         ? videoDevices.find(
-                            (device) => device.deviceId === videoActiveDeviceId,
-                          )?.deviceId || videoDevices[0].deviceId
+                          (device) => device.deviceId === videoActiveDeviceId,
+                        )?.deviceId || videoDevices[0].deviceId
                         : "Permission needed"
                     }
                     onValueChange={(deviceId) => setVideoActiveDevice(deviceId)}
@@ -204,7 +196,6 @@ export default function SettingsDialog({
                   </Select>
                 </div>
 
-                {/* Resolution settings */}
                 <div>
                   <Label
                     htmlFor="send_resolution"
@@ -252,7 +243,6 @@ export default function SettingsDialog({
                 </div>
 
                 <div>
-                  {/* Codec settings */}
                   <Label
                     htmlFor="codecs"
                     className="font-medium mb-2 text-base text-primary"
@@ -288,7 +278,6 @@ export default function SettingsDialog({
                   </Select>
                 </div>
 
-                {/* Frames settings */}
                 <div>
                   <Label
                     htmlFor="frames"
@@ -338,7 +327,6 @@ export default function SettingsDialog({
                   </Select>
                 </div>
 
-                {/* Facing Mode settings */}
                 <div>
                   <Label
                     htmlFor="facing_mode"
@@ -380,7 +368,6 @@ export default function SettingsDialog({
               </div>
             )}
 
-            {/* Audio Settings */}
             {activeTab === "audio" && (
               <div className="space-y-7 w-full">
                 <Label
@@ -393,8 +380,8 @@ export default function SettingsDialog({
                   value={
                     audioDevices?.[0]?.deviceId
                       ? audioDevices.find(
-                          (device) => device.deviceId === audioActiveDeviceId,
-                        )?.deviceId || audioDevices[0].deviceId
+                        (device) => device.deviceId === audioActiveDeviceId,
+                      )?.deviceId || audioDevices[0].deviceId
                       : "Permission needed"
                   }
                   onValueChange={(deviceId) => setAudioActiveDevice(deviceId)}
@@ -426,7 +413,7 @@ export default function SettingsDialog({
                   </h3>
                   <Switch
                     defaultChecked={!!audioDevices?.[0]?.deviceId}
-                    onCheckedChange={() => {}}
+                    onCheckedChange={() => { }}
                     disabled={!audioDevices?.[0]?.deviceId}
                     className="shadow cursor-pointer"
                   />
@@ -435,7 +422,6 @@ export default function SettingsDialog({
                   Press and hold spacebar to unmute your mic
                 </p>
 
-                {/* Speaker Settings */}
                 <div className="space-y-2">
                   <Label
                     htmlFor="speaker"
@@ -447,9 +433,9 @@ export default function SettingsDialog({
                     value={
                       speakerDevices?.[0]?.deviceId
                         ? speakerDevices.find(
-                            (device) =>
-                              device.deviceId === speakerActiveDeviceId,
-                          )?.deviceId || speakerDevices[0].deviceId
+                          (device) =>
+                            device.deviceId === speakerActiveDeviceId,
+                        )?.deviceId || speakerDevices[0].deviceId
                         : "Permission needed"
                     }
                     onValueChange={(deviceId) =>
@@ -488,7 +474,6 @@ export default function SettingsDialog({
               </div>
             )}
 
-            {/* General Settings */}
             {activeTab === "general" && (
               <div className="space-y-6">
                 <h3 className="text-[#1a73e8] font-medium mb-2">
