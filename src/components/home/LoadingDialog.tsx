@@ -1,19 +1,14 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "motion/react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 type LoadingDialogProps = {
   open: boolean;
   message: string;
-  subtext?: string;
 };
 
-export default function LoadingDialog({
-  open,
-  message,
-  subtext = "This will only take a moment",
-}: LoadingDialogProps) {
+export default function LoadingDialog({ open, message }: LoadingDialogProps) {
   return (
     <Dialog open={open}>
       <DialogTitle />
@@ -27,7 +22,9 @@ export default function LoadingDialog({
           <div className="flex flex-col items-center justify-center py-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
             <h3 className="text-lg font-medium">{message}</h3>
-            <p className="text-gray-500 text-sm mt-2">{subtext}</p>
+            <p className="text-gray-500 text-sm mt-2">
+              This will only take a moment
+            </p>
           </div>
         </motion.div>
       </DialogContent>

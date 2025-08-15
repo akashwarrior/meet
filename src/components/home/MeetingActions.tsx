@@ -1,20 +1,19 @@
 "use client";
 
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Video, Keyboard, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { motion } from "motion/react";
-import { Video, Keyboard, ChevronDown } from "lucide-react";
-import { RefObject } from "react";
 
 type MeetingActionsProps = {
   loading: boolean;
-  meetingCodeRef: RefObject<HTMLInputElement | null>;
+  meetingCodeRef: React.RefObject<HTMLInputElement | null>;
   onStartInstant: () => void;
   onCreateLater: () => void;
   onJoin: () => void;

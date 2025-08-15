@@ -1,31 +1,28 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { memo, useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LucideChevronLeft, LucideChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 import Participant from "./participant";
 import { useParticipants } from "@livekit/components-react";
 import { useMediaQuery } from "usehooks-ts";
-import type { LocalParticipant, RemoteParticipant } from "livekit-client";
 
-const VideoGrid = memo(() => {
-  const [currentPage, setCurrentPage] = useState(0);
+export default function VideoGrid() {
   const participants = useParticipants();
+  const [currentPage, setCurrentPage] = useState(0);
   const isSmallScreen = useMediaQuery("(max-width: 768px)");
 
   const participantsPerPage = isSmallScreen ? 6 : 9;
-  const totalPages = participants.length / participantsPerPage;
+  const totalPages = Math.ceil(participants.length / participantsPerPage);
 
-  const currentParticipants = useMemo(() => {
-    const start = currentPage * participantsPerPage;
-    const end = start + participantsPerPage;
+  const start = currentPage * participantsPerPage;
+  const end = start + participantsPerPage;
 
-    return participants.slice(start, end);
-  }, [participants, currentPage, participantsPerPage]);
+  const currentParticipants = participants.slice(start, end);
 
-  const getGridClass = useMemo(() => {
+  const getGridClass = (): string => {
     switch (currentParticipants.length) {
       case 1:
         return "grid-cols-1";
@@ -41,14 +38,29 @@ const VideoGrid = memo(() => {
       default:
         return "grid-cols-2 md:grid-cols-3 grid-rows-3";
     }
-  }, [currentParticipants.length]);
+  };
 
   return (
     <>
-      <MemoizedParticipant
-        currentParticipants={currentParticipants}
-        getGridClass={getGridClass}
-      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        transition={{ duration: 0.2 }}
+        className={cn("h-full w-full p-2 grid gap-2 ", getGridClass())}
+      >
+        {currentParticipants.map(
+          ({ sid, identity, name, isCameraEnabled, isMicrophoneEnabled }) => (
+            <Participant
+              key={sid}
+              identity={identity}
+              userName={name || "Unknown"}
+              isCameraEnabled={isCameraEnabled}
+              isMicrophoneEnabled={isMicrophoneEnabled}
+            />
+          ),
+        )}
+      </motion.div>
 
       {totalPages > 1 && (
         <div className="absolute bottom-20 left-0 w-full flex justify-center items-center space-x-2 z-50">
@@ -63,7 +75,7 @@ const VideoGrid = memo(() => {
 
           <div className="flex space-x-1">
             {Array.from({ length: totalPages }, (_, index) => (
-              <motion.div
+              <div
                 key={index}
                 className={cn(
                   "h-2 w-2 rounded-full shadow border",
@@ -85,42 +97,5 @@ const VideoGrid = memo(() => {
       )}
     </>
   );
-});
+};
 
-VideoGrid.displayName = "VideoGrid";
-export default VideoGrid;
-
-const MemoizedParticipant = memo(
-  ({
-    currentParticipants,
-    getGridClass,
-  }: {
-    currentParticipants: (RemoteParticipant | LocalParticipant)[];
-    getGridClass: string;
-  }) => {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.2 }}
-        className={cn("h-full w-full p-2 grid gap-2 ", getGridClass)}
-        layout
-      >
-        {currentParticipants.map(
-          ({ sid, identity, name, isCameraEnabled, isMicrophoneEnabled }) => (
-            <Participant
-              key={sid}
-              identity={identity}
-              userName={name || "Unknown"}
-              isCameraEnabled={isCameraEnabled}
-              isMicrophoneEnabled={isMicrophoneEnabled}
-            />
-          ),
-        )}
-      </motion.div>
-    );
-  },
-);
-
-MemoizedParticipant.displayName = "MemoizedParticipant";

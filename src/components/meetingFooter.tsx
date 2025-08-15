@@ -1,12 +1,12 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { memo } from "react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import LiveClock from "./liveClock";
 import useSidebarOpenStore from "@/store/sideBar";
+import useMeetingPrefsStore from "@/store/meetingPrefs";
 import {
   MessageSquare,
   Mic,
@@ -21,9 +21,8 @@ import {
   useLocalParticipant,
   useMediaDeviceSelect,
 } from "@livekit/components-react";
-import useMeetingPrefsStore from "@/store/meetingPrefs";
 
-const MeetingFooter = memo(() => {
+export default function MeetingFooter() {
   const router = useRouter();
   const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore();
   const { isCameraEnabled, isMicrophoneEnabled, localParticipant } =
@@ -40,7 +39,7 @@ const MeetingFooter = memo(() => {
     requestPermissions: false,
   });
 
-  // Toggle sidebar
+
   const toggleSidebar = (tab: "participants" | "chat" | null) => {
     if (sidebarOpen === tab) {
       setSidebarOpen(null);
@@ -78,10 +77,7 @@ const MeetingFooter = memo(() => {
     }
   };
 
-  // Leave the meeting
-  const leaveCall = () => {
-    router.push("/");
-  };
+  const leaveCall = () => router.push("/");
 
   return (
     <footer className="bg-background border-t border-border py-4 flex relative">
@@ -134,7 +130,7 @@ const MeetingFooter = memo(() => {
           className={cn(
             "rounded-full h-12 w-12",
             sidebarOpen === "participants" &&
-              "bg-primary/90 hover:bg-primary/50",
+            "bg-primary/90 hover:bg-primary/50",
           )}
         >
           <Users className="h-5 w-5" />
@@ -150,7 +146,5 @@ const MeetingFooter = memo(() => {
       </div>
     </footer>
   );
-});
+};
 
-MeetingFooter.displayName = "MeetingFooter";
-export default MeetingFooter;

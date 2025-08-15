@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 import Providers from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { getServerSession } from "next-auth/next";
-import { NEXT_AUTH } from "@/lib/auth";
+import { authOptions } from "@/lib/auth";
 import "./globals.css";
 
 const myFont = localFont({
@@ -18,6 +18,7 @@ const myFont = localFont({
       path: "../fonts/bold.woff2",
     },
   ],
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  const session = await getServerSession(NEXT_AUTH);
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang="en" suppressHydrationWarning>

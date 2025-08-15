@@ -8,7 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 type MeetingInfoDialogProps = {
-  link: string | null;
+  link: string;
   onClose: () => void;
   onJoinNow: (link: string) => void;
 };
@@ -21,7 +21,6 @@ export default function MeetingInfoDialog({
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
-    if (!link?.trim()) return;
     try {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -35,7 +34,7 @@ export default function MeetingInfoDialog({
   };
 
   return (
-    <Dialog open={link !== null} onOpenChange={onClose}>
+    <Dialog open={!!link} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md [&>button]:hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -79,7 +78,7 @@ export default function MeetingInfoDialog({
             <Button type="button" variant="secondary" onClick={onClose}>
               Close
             </Button>
-            {link && <Button onClick={() => onJoinNow(link)}>Join now</Button>}
+            <Button onClick={() => onJoinNow(link)}>Join now</Button>
           </div>
         </motion.div>
       </DialogContent>

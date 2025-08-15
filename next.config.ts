@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     viewTransition: true,
-    parallelServerCompiles: true,
-    parallelServerBuildTraces: true,
-    webpackBuildWorker: true,
   },
 };
 

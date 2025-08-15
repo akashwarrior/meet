@@ -1,11 +1,12 @@
 "use client";
 
 import { toast } from "sonner";
-import { memo, useState } from "react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Info, UserPlus, Copy, Shield } from "lucide-react";
 import { Input } from "./ui/input";
 import ThemeToggle from "./theme-toggle";
+import { RoomAudioRenderer } from "@livekit/components-react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { RoomAudioRenderer } from "@livekit/components-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-const MeetingHeader = memo(({ meetingId }: { meetingId: string }) => {
+export default function MeetingHeader({ meetingId }: { meetingId: string }) {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   const copyMeetingLink = () => {
@@ -50,12 +50,14 @@ const MeetingHeader = memo(({ meetingId }: { meetingId: string }) => {
       </div>
       <div className="flex items-center">
         <ThemeToggle />
+
         <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
           <DialogTrigger asChild>
             <Button variant="ghost" size="icon" className="text-foreground">
               <UserPlus className="h-5 w-5" />
             </Button>
           </DialogTrigger>
+
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Invite people</DialogTitle>
@@ -63,6 +65,7 @@ const MeetingHeader = memo(({ meetingId }: { meetingId: string }) => {
                 Share this meeting link with others you want to invite
               </DialogDescription>
             </DialogHeader>
+
             <div className="flex items-center space-x-2 mt-4">
               <Input
                 value={window.location.href}
@@ -73,6 +76,7 @@ const MeetingHeader = memo(({ meetingId }: { meetingId: string }) => {
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
+
             <div className="mt-4">
               <h4 className="text-sm font-medium mb-2">Security options</h4>
               <div className="flex items-center space-x-2">
@@ -91,30 +95,35 @@ const MeetingHeader = memo(({ meetingId }: { meetingId: string }) => {
               <Info className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent align="end">
             <div className="px-2 py-1.5 text-sm font-medium">
               Meeting details
             </div>
+
             <DropdownMenuSeparator />
+
             <div className="px-2 py-1.5">
               <div className="text-xs text-muted-foreground">Meeting ID</div>
               <div className="text-sm">{meetingId}</div>
             </div>
+
             <div className="px-2 py-1.5">
               <div className="text-xs text-muted-foreground">Joining info</div>
               <div className="text-sm">{window.location.href}</div>
             </div>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuItem onClick={copyMeetingLink}>
               <Copy className="h-4 w-4 mr-2" />
               Copy joining info
             </DropdownMenuItem>
           </DropdownMenuContent>
+
         </DropdownMenu>
       </div>
     </header>
   );
-});
+};
 
-MeetingHeader.displayName = "MeetingHeader";
-export default MeetingHeader;

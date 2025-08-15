@@ -2,10 +2,9 @@
 
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { FormEvent, memo, useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MessageSquare,
@@ -24,7 +23,8 @@ import {
 } from "@livekit/components-react";
 import useSidebarOpenStore from "@/store/sideBar";
 
-const SideBar = memo(() => {
+
+export default function SideBar() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const messageRef = useRef<HTMLInputElement>(null);
   const participants = useParticipants();
@@ -92,7 +92,7 @@ const SideBar = memo(() => {
           <h3 className="text-sm font-medium text-muted-foreground my-2 mx-4">
             Participants
           </h3>
-          <ScrollArea className="h-full px-6">
+          <div className="h-full px-6 overflow-y-auto">
             {participants.map(
               ({ sid, name, isMicrophoneEnabled, isCameraEnabled }) => (
                 <div
@@ -124,27 +124,27 @@ const SideBar = memo(() => {
                 </div>
               ),
             )}
-          </ScrollArea>
+          </div>
         </TabsContent>
 
         <TabsContent
           value="chat"
           className="flex-1 flex flex-col p-0 m-0 overflow-hidden"
         >
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-4">
               {chatMessages.map(
                 ({ id, message, timestamp, from }: ReceivedChatMessage) => (
-                  <div
+                  from && <div
                     key={id}
-                    className={`flex flex-col ${from?.allParticipantsAllowedToSubscribe ? "bg-primary/15" : "bg-gray-100 dark:bg-neutral-800"} rounded-lg py-3 px-4`}
+                    className={`flex flex-col ${from.allParticipantsAllowedToSubscribe ? "bg-primary/15" : "bg-gray-100 dark:bg-neutral-800"} rounded-lg py-3 px-4`}
                   >
                     <div className="flex items-center mb-1">
                       <span
                         className={cn(
                           "font-medium mr-2",
-                          from?.allParticipantsAllowedToSubscribe &&
-                            "text-blue-500 dark:text-blue-400",
+                          from.allParticipantsAllowedToSubscribe &&
+                          "text-blue-500 dark:text-blue-400",
                         )}
                       >
                         {from.name}
@@ -160,8 +160,8 @@ const SideBar = memo(() => {
                     <p
                       className={cn(
                         "text-foreground",
-                        from?.allParticipantsAllowedToSubscribe &&
-                          "text-muted-foreground italic",
+                        from.allParticipantsAllowedToSubscribe &&
+                        "text-muted-foreground italic",
                       )}
                     >
                       {message}
@@ -171,7 +171,7 @@ const SideBar = memo(() => {
               )}
               <div ref={chatEndRef} />
             </div>
-          </ScrollArea>
+          </div>
           <form
             onSubmit={SendMessage}
             className="p-4 border-t border-border flex items-center"
@@ -190,7 +190,4 @@ const SideBar = memo(() => {
       </Tabs>
     </div>
   );
-});
-
-SideBar.displayName = "SideBar";
-export default SideBar;
+};

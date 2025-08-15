@@ -1,12 +1,6 @@
 "use client";
 
 import { toast } from "sonner";
-import {
-  FormEvent,
-  useRef,
-  useState,
-  unstable_ViewTransition as ViewTransition,
-} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
@@ -14,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import {
+  FormEvent,
+  useRef,
+  useState,
+  unstable_ViewTransition as ViewTransition,
+} from "react";
 
 export default function Login() {
   const router = useRouter();
@@ -24,9 +24,11 @@ export default function Login() {
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
+
     const email = emailRef.current?.value || "";
     const password = passwordRef.current?.value || "";
     setLoading(true);
+
     try {
       const res = await signIn("Login", {
         email,
@@ -35,22 +37,25 @@ export default function Login() {
       });
 
       if (res?.ok) {
-        toast.success("Login successful");
+        toast.success("Login successful", {
+          description: "Redirecting to home...",
+        });
         router.back();
       } else {
         if (res?.error) {
           toast.error(res.error, {
-            description: "Please check your credentials and try again",
+            description: "Please check your credentials",
           });
         } else {
-          toast.error("Something went wrong", {
-            description: "Please try again later",
-          });
+          throw new Error("Something went wrong");
         }
-        setLoading(false);
       }
     } catch (error) {
-      console.log("Error during login:", error);
+      toast.error("Something went wrong", {
+        description: "Please try again later",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -25,7 +25,11 @@ import {
   SelectValue,
 } from "./ui/select";
 
-export default function SettingsDialog({ children }: { children: React.ReactNode }) {
+export default function SettingsDialog({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { resolution, videoCodec, facingMode } = useMeetingPrefsStore(
     (state) => state.video,
   );
