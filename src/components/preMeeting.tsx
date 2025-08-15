@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Header from "@/components/header";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,7 @@ import useMeetingPrefsStore from "@/store/meetingPrefs";
 import PermissionDialog from "./permissionDialog";
 import DeviceSelection from "./deviceSelection";
 import SettingsDialog from "./settingsDialog";
-import {
-  EllipsisVertical,
-  Mic,
-  MicOff,
-  Video,
-  VideoOff
-} from "lucide-react";
+import { EllipsisVertical, Mic, MicOff, Video, VideoOff } from "lucide-react";
 import {
   useMediaDeviceSelect,
   useRoomContext,
@@ -26,12 +20,9 @@ import {
 
 export default function PreMeeting({ meetingId }: { meetingId: string }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const meeting = useMeetingPrefsStore(state => state.meeting)
   const isVideoEnabled = useMeetingPrefsStore(
     (state) => state.meeting.isVideoEnabled,
   );
-  const [showDialog, setShowDialog] = useState(false);
-
   const { facingMode, resolution } = useMeetingPrefsStore(
     (state) => state.video,
   );
@@ -45,36 +36,19 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
   });
 
   useEffect(() => {
-    const videoTrack = tracks?.filter((track) => track.kind === Track.Kind.Video)[0]
+    const videoTrack = tracks?.filter(
+      (track) => track.kind === Track.Kind.Video,
+    )[0];
 
     if (videoRef.current && videoTrack) {
       videoTrack.unmute();
       videoTrack.attach(videoRef.current);
     }
+
     return () => {
       videoTrack?.detach();
     };
   }, [tracks]);
-
-
-  useEffect(() => {
-    if (navigator.permissions) {
-      const cameraResult = navigator.permissions.query({ name: "camera" });
-      const micResult = navigator.permissions.query({ name: "microphone" });
-      Promise.all([cameraResult, micResult]).then(
-        ([cameraResult, micResult]) => {
-          if (cameraResult.state === "prompt" && micResult.state === "prompt") {
-            setShowDialog(true);
-          }
-        },
-      );
-    }
-
-    return () => {
-      tracks?.forEach((track) => track.detach());
-    };
-  }, []);
-
 
   return (
     <div className="min-h-[90vh] bg-background flex flex-col items-center justify-center">
@@ -95,14 +69,17 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
                 <div className="text-white text-2xl m-auto">Camera is off</div>
               </div>
             )}
+
             <VideoControls />
           </div>
-          {(meeting.isVideoEnabled || meeting.isAudioEnabled) && <DeviceSelection />}
+
+          <DeviceSelection />
         </div>
+
         <JoinMeeting meetingId={meetingId} />
       </main>
 
-      {showDialog && <PermissionDialog />}
+      <PermissionDialog />
     </div>
   );
 }
@@ -117,8 +94,6 @@ const VideoControls = () => {
   const setMeetingPrefs = useMeetingPrefsStore(
     (state) => state.setMeetingPrefs,
   );
-
-  const meeting = useMeetingPrefsStore(state => state.meeting)
 
   return (
     <>
@@ -149,7 +124,7 @@ const VideoControls = () => {
       </div>
 
       <div className="absolute top-0 left-0 right-0 flex bg-gradient-to-b from-black/50 to-transparent p-3 justify-end items-center">
-        {(meeting.isVideoEnabled || meeting.isAudioEnabled) && <SettingsDialog>
+        <SettingsDialog>
           <Button
             variant="ghost"
             size="icon"
@@ -157,7 +132,7 @@ const VideoControls = () => {
           >
             <EllipsisVertical className="w-5! h-5!" />
           </Button>
-        </SettingsDialog>}
+        </SettingsDialog>
       </div>
     </>
   );
@@ -182,7 +157,7 @@ const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
     requestPermissions: false,
   });
 
-  const joinMeeting = async () => {
+  const handleJoinMeeting = async () => {
     const username = nameRef.current?.value.trim();
     if (!username) {
       toast.error("Name Required", {
@@ -225,7 +200,7 @@ const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
   };
 
   return (
-    <div className="w-full max-w-xs flex flex-col gap-7 items-center">
+    <div className="w-full max-w-xs flex flex-col gap-7 items-center my-10">
       <h1 className="text-2xl text-foreground">What&apos;s your name?</h1>
       <Input
         type="text"
@@ -240,7 +215,7 @@ const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
       <Button
         variant="default"
         className="text-base font-bold rounded-full px-16 py-7 mt-2"
-        onClick={joinMeeting}
+        onClick={handleJoinMeeting}
         disabled={state === ConnectionState.Connecting}
       >
         {state === ConnectionState.Connecting ? "Joining..." : "Join Meeting"}

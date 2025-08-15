@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
-
-export default function AuthLayout({ children }: { children: ReactNode }) {
+export default function AuthLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center dark:bg-black/50 bg-muted relative overflow-hidden">
       <div className="absolute w-full h-full overflow-visible z-0 top-0 left-0 origin-center animate-bg-effect">

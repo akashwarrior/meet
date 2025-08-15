@@ -12,10 +12,10 @@ export default function Providers({
   session: Session | null;
 }>) {
   return (
-    <SessionProvider session={session}>
-      <ThemeProvider attribute="class" defaultTheme="dark">
+    <ThemeProvider attribute="class" defaultTheme="dark">
+      <SessionProvider session={session}>
         {children}
-      </ThemeProvider>
-    </SessionProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

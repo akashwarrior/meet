@@ -1,5 +1,4 @@
 import { Button } from "./ui/button";
-import { motion } from "motion/react";
 import { useMediaDeviceSelect } from "@livekit/components-react";
 import { ChevronDown, Mic, Volume2, Video } from "lucide-react";
 import {
@@ -45,20 +44,13 @@ export default function DeviceSelection() {
             disabled={!audioDevices?.[0]?.deviceId}
           >
             <Mic />
-            <motion.span
-              className="truncate"
-              key={audioActiveDeviceId}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-            >
+            <span className="truncate">
               {audioDevices?.[0]?.deviceId
                 ? audioDevices.find(
-                  (device) => device.deviceId === audioActiveDeviceId,
-                )?.label || audioDevices[0].label
+                    (device) => device.deviceId === audioActiveDeviceId,
+                  )?.label || audioDevices[0].label
                 : "Permission needed"}
-            </motion.span>
+            </span>
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>
@@ -67,12 +59,7 @@ export default function DeviceSelection() {
           align="start"
           className="min-w-[var(--radix-dropdown-menu-trigger-width)] bg-background p-0 "
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full h-full bg-background overflow-hidden"
-          >
+          <div className="w-full h-full bg-background overflow-hidden">
             {audioDevices.map((device) => (
               <DropdownMenuItem
                 key={device.deviceId}
@@ -82,7 +69,7 @@ export default function DeviceSelection() {
                 {device.label}
               </DropdownMenuItem>
             ))}
-          </motion.div>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -94,20 +81,13 @@ export default function DeviceSelection() {
             disabled={!speakerDevices?.[0]?.deviceId}
           >
             <Volume2 />
-            <motion.span
-              className="truncate"
-              key={speakerActiveDeviceId}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-            >
+            <span className="truncate">
               {speakerDevices?.[0]?.deviceId
                 ? speakerDevices.find(
-                  (device) => device.deviceId === speakerActiveDeviceId,
-                )?.label || speakerDevices[0].label
+                    (device) => device.deviceId === speakerActiveDeviceId,
+                  )?.label || speakerDevices[0].label
                 : "Permission needed"}
-            </motion.span>
+            </span>
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>
@@ -116,12 +96,7 @@ export default function DeviceSelection() {
           align="start"
           className="min-w-[var(--radix-dropdown-menu-trigger-width)] bg-background p-0 "
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full h-full bg-background overflow-hidden"
-          >
+          <div className="w-full h-full bg-background overflow-hidden">
             {speakerDevices.map((device) => (
               <DropdownMenuItem
                 key={device.deviceId}
@@ -131,7 +106,7 @@ export default function DeviceSelection() {
                 {device.label}
               </DropdownMenuItem>
             ))}
-          </motion.div>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -143,20 +118,13 @@ export default function DeviceSelection() {
             disabled={!videoDevices?.[0]?.deviceId}
           >
             <Video />
-            <motion.span
-              className="truncate"
-              key={videoActiveDeviceId}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-            >
+            <span className="truncate">
               {videoDevices?.[0]?.deviceId
                 ? videoDevices.find(
-                  (device) => device.deviceId === videoActiveDeviceId,
-                )?.label || videoDevices[0].label
+                    (device) => device.deviceId === videoActiveDeviceId,
+                  )?.label || videoDevices[0].label
                 : "Permission needed"}
-            </motion.span>
+            </span>
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>
@@ -165,12 +133,7 @@ export default function DeviceSelection() {
           align="start"
           className="min-w-[var(--radix-dropdown-menu-trigger-width)] bg-background p-0 "
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full h-full bg-background overflow-hidden"
-          >
+          <div className="w-full h-full bg-background overflow-hidden">
             {videoDevices.map((device) => (
               <DropdownMenuItem
                 key={device.deviceId}
@@ -180,7 +143,7 @@ export default function DeviceSelection() {
                 {device.label}
               </DropdownMenuItem>
             ))}
-          </motion.div>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

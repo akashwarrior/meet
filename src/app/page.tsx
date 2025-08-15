@@ -1,28 +1,28 @@
 "use client";
 
-import Header from "@/components/header";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import Header from "@/components/header";
+import Image from "next/image";
 import MeetingActions from "@/components/home/MeetingActions";
 import MeetingInfoDialog from "@/components/home/MeetingInfoDialog";
 import LoadingDialog from "@/components/home/LoadingDialog";
 import { extractMeetingId } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function Home() {
   const router = useRouter();
-  const [meetingLink, setMeetingLink] = useState<string | null>(null);
+  const [meetingLink, setMeetingLink] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const meetingCodeRef = useRef<HTMLInputElement>(null);
 
-  const generateMeetingLink = async () => {
+  const generateMeetingLink = async (): Promise<string | null> => {
     try {
       setLoading(true);
       const response = await fetch("/api/meetings", { method: "POST" });
       const res = await response.json();
       if (response.ok) {
-        return res.link as string;
+        return res.link;
       } else {
         toast.error(res.error, {
           description: "Please try again later",
@@ -91,8 +91,6 @@ export default function Home() {
     }
   };
 
-  // copy is handled within MeetingInfoDialog
-
   return (
     <main className="bg-background relative">
       <Header />
@@ -105,6 +103,7 @@ export default function Home() {
           <p className="text-lg md:text-xl text-muted-foreground mb-8">
             Connect, collaborate and celebrate from anywhere with Meet
           </p>
+
           <MeetingActions
             loading={loading}
             meetingCodeRef={meetingCodeRef}
@@ -117,8 +116,8 @@ export default function Home() {
             <p className="text-muted-foreground">
               <span
                 onClick={() => {
-                  toast.info("This feature is not available yet", {
-                    description: "Please check back later",
+                  toast.info("This page is not available yet", {
+                    description: "Please check back later :)",
                   });
                 }}
                 className="text-primary hover:underline cursor-pointer"
@@ -144,13 +143,13 @@ export default function Home() {
 
       <MeetingInfoDialog
         link={meetingLink}
-        onClose={() => setMeetingLink(null)}
+        onClose={() => setMeetingLink("")}
         onJoinNow={(link) => router.push(`/meeting/${extractMeetingId(link)}`)}
       />
 
       <LoadingDialog
         open={loading}
-        message={`${!meetingCodeRef.current?.value ? "Creating your" : "Finding"} meeting...`}
+        message={`${meetingCodeRef.current?.value ? "Finding" : "Creating"} your meeting...`}
       />
     </main>
   );

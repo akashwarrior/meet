@@ -1,21 +1,35 @@
-import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
 import Image from "next/image";
 import useMeetingPrefsStore from "@/store/meetingPrefs";
 import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "motion/react";
 
 export default function PermissionDialog() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const setMeetingPrefs = useMeetingPrefsStore(
     (state) => state.setMeetingPrefs,
   );
-  const [showDialog, setShowDialog] = useState(true);
+  const [showDialog, setShowDialog] = useState(false);
 
-  return showDialog && (
-    <Dialog open={showDialog}>
+  useEffect(() => {
+    if (navigator.permissions) {
+      const cameraResult = navigator.permissions.query({ name: "camera" });
+      const micResult = navigator.permissions.query({ name: "microphone" });
+      Promise.all([cameraResult, micResult]).then(
+        ([cameraResult, micResult]) => {
+          if (cameraResult.state === "prompt" && micResult.state === "prompt") {
+            setShowDialog(true);
+          }
+        },
+      );
+    }
+  }, []);
+
+  return (
+    <Dialog open={showDialog} onOpenChange={setShowDialog}>
       <DialogContent
         className="[&>button]:hidden border-none flex flex-col items-center rounded-2xl md:max-w-3xl!"
         aria-describedby={undefined}
@@ -76,11 +90,11 @@ export default function PermissionDialog() {
           </Button>
         </div>
 
-        <motion.div
-          initial={{ height: 0 }}
-          animate={isCollapsed ? { height: "auto" } : { height: 0 }}
-          transition={{ duration: 0.2 }}
-          className="w-11/12 overflow-hidden flex flex-col gap-4 items-center max-w-md"
+        <div
+          className={cn(
+            "w-11/12 overflow-hidden flex flex-col gap-4 items-center max-w-md",
+            isCollapsed ? "h-auto" : "h-0",
+          )}
         >
           <div className="flex gap-3 md:gap-4 w-full">
             <Button
@@ -143,7 +157,7 @@ export default function PermissionDialog() {
           >
             Continue without microphone and camera
           </Button>
-        </motion.div>
+        </div>
       </DialogContent>
     </Dialog>
   );

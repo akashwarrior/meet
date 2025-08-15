@@ -1,6 +1,6 @@
 import Meeting from "@/components/meeting/Meeting";
 import prisma from "@/lib/db";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 
 export default async function MeetingPage({
   params,
@@ -10,7 +10,7 @@ export default async function MeetingPage({
   const meetingId = (await params).id;
 
   if (!meetingId || meetingId.length !== 25) {
-    redirect("/");
+    notFound();
   }
 
   let meeting: { id: string } | null = null;
@@ -30,7 +30,8 @@ export default async function MeetingPage({
   }
 
   if (!meeting?.id) {
-    redirect("/");
+    console.log("missing id ", meeting);
+    notFound();
   }
 
   return <Meeting meetingId={meeting.id} />;

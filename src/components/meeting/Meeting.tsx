@@ -1,50 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import PreMeeting from "../preMeeting";
 import { RoomContext } from "@livekit/components-react";
-import { Room, ConnectionState, AudioPresets } from "livekit-client";
-
-const VideoGrid = dynamic(() => import("@/components/videoGrid"), {
-  ssr: false,
-});
-const SideBar = dynamic(() => import("@/components/sideBar"), { ssr: false });
-const MeetingHeader = dynamic(() => import("@/components/meetingHeader"), {
-  ssr: false,
-});
-const MeetingFooter = dynamic(() => import("@/components/meetingFooter"), {
-  ssr: false,
-});
+import { Room } from "livekit-client";
+import VideoGrid from "@/components/videoGrid";
+import SideBar from "@/components/sideBar";
+import MeetingHeader from "@/components/meetingHeader";
+import MeetingFooter from "@/components/meetingFooter";
 
 export default function Meeting({ meetingId }: { meetingId: string }) {
-  const [render, setRender] = useState(false);
-  const [roomInstance] = useState<Room>(
-    () =>
-      new Room({
-        adaptiveStream: true,
-        dynacast: true,
-        publishDefaults: {
-          scalabilityMode: "L1T1",
-          simulcast: false,
-          audioPreset: AudioPresets.musicHighQualityStereo,
-          dtx: false,
-          red: false,
-        },
-      }),
-  );
+  const [ready, setReady] = useState(false);
+  const roomInstance = useRef(
+    new Room({
+      adaptiveStream: true,
+      dynacast: true,
+      publishDefaults: {
+        scalabilityMode: "L1T3",
+        simulcast: true,
+      },
+    }),
+  )
 
   useEffect(() => {
-    roomInstance.on("connected", () => setRender(!render));
-    roomInstance.on("disconnected", () => setRender(!render));
+    roomInstance.current.on("connected", () => setReady(true));
+    roomInstance.current.on("disconnected", () => setReady(false));
     return () => {
-      roomInstance.disconnect();
+      roomInstance.current.disconnect();
     };
   }, [roomInstance]);
 
   return (
-    <RoomContext.Provider value={roomInstance}>
-      {roomInstance.state !== ConnectionState.Connected ? (
+    <RoomContext.Provider value={roomInstance.current}>
+      {!ready ? (
         <PreMeeting meetingId={meetingId} />
       ) : (
         <main className="h-screen flex flex-col bg-background">

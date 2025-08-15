@@ -5,7 +5,7 @@ import prisma from "@/lib/db";
 
 const SALT_ROUND = 10;
 
-export const NEXT_AUTH = {
+export const authOptions = {
   providers: [
     CredentialsProvider({
       id: "Login",
@@ -37,7 +37,10 @@ export const NEXT_AUTH = {
             },
           });
 
-          const res = await compare(credentials.password.trim(), user.password);
+          const res = await compare(
+            credentials.password.trim(),
+            user.password,
+          );
           if (!res) {
             throw new Error("Invalid password");
           }
