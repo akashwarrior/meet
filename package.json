@@ -6,9 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "generate": "prisma generate",
     "lint": "next lint",
     "format": "prettier --write .",
+    "generate": "prisma generate",
     "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
