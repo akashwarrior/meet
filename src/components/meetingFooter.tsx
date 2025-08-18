@@ -39,7 +39,6 @@ export default function MeetingFooter() {
     requestPermissions: false,
   });
 
-
   const toggleSidebar = (tab: "participants" | "chat" | null) => {
     if (sidebarOpen === tab) {
       setSidebarOpen(null);
@@ -130,7 +129,7 @@ export default function MeetingFooter() {
           className={cn(
             "rounded-full h-12 w-12",
             sidebarOpen === "participants" &&
-            "bg-primary/90 hover:bg-primary/50",
+              "bg-primary/90 hover:bg-primary/50",
           )}
         >
           <Users className="h-5 w-5" />
@@ -146,5 +145,4 @@ export default function MeetingFooter() {
       </div>
     </footer>
   );
-};
-
+}

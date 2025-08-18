@@ -5,12 +5,12 @@ import Header from "@/components/header";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useSession } from "next-auth/react";
 import { ConnectionState, Track } from "livekit-client";
 import useMeetingPrefsStore from "@/store/meetingPrefs";
 import PermissionDialog from "./permissionDialog";
 import DeviceSelection from "./deviceSelection";
 import SettingsDialog from "./settingsDialog";
+import { useSession } from "@/lib/auth/auth-client";
 import { EllipsisVertical, Mic, MicOff, Video, VideoOff } from "lucide-react";
 import {
   useMediaDeviceSelect,

@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { ReactNode } from "react";
 import localFont from "next/font/local";
-import Providers from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const myFont = localFont({
@@ -32,13 +29,18 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{ children: ReactNode }>) {
-  const session = await getServerSession(authOptions);
-
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={myFont.className}>
-        <Providers session={session}>{children}</Providers>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
         <Toaster richColors theme="light" />
       </body>
     </html>

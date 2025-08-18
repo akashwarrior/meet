@@ -1,12 +1,14 @@
 import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
 import prisma from "@/lib/db";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
+import { headers } from "next/headers";
 
 const ERROR_CAUSE = "WRONG_INPUTS";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   try {
     if (!session?.user) {
