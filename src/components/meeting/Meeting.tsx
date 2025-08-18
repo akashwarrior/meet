@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import PreMeeting from "../preMeeting";
 import { RoomContext } from "@livekit/components-react";
 import { Room } from "livekit-client";
@@ -11,27 +11,28 @@ import MeetingFooter from "@/components/meetingFooter";
 
 export default function Meeting({ meetingId }: { meetingId: string }) {
   const [ready, setReady] = useState(false);
-  const roomInstance = useRef(
-    new Room({
-      adaptiveStream: true,
-      dynacast: true,
-      publishDefaults: {
-        scalabilityMode: "L1T3",
-        simulcast: true,
-      },
-    }),
-  )
+  const [roomInstance] = useState(
+    () =>
+      new Room({
+        adaptiveStream: true,
+        dynacast: true,
+        publishDefaults: {
+          scalabilityMode: "L1T3",
+          simulcast: true,
+        },
+      }),
+  );
 
   useEffect(() => {
-    roomInstance.current.on("connected", () => setReady(true));
-    roomInstance.current.on("disconnected", () => setReady(false));
+    roomInstance.on("connected", () => setReady(true));
+    roomInstance.on("disconnected", () => setReady(false));
     return () => {
-      roomInstance.current.disconnect();
+      roomInstance.disconnect();
     };
   }, [roomInstance]);
 
   return (
-    <RoomContext.Provider value={roomInstance.current}>
+    <RoomContext.Provider value={roomInstance}>
       {!ready ? (
         <PreMeeting meetingId={meetingId} />
       ) : (

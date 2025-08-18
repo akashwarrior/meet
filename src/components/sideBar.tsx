@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { FormEvent, useEffect, useRef } from "react";
+import useSidebarOpenStore from "@/store/sideBar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MessageSquare,
@@ -19,10 +20,9 @@ import {
 import {
   ReceivedChatMessage,
   useChat,
+  useLocalParticipant,
   useParticipants,
 } from "@livekit/components-react";
-import useSidebarOpenStore from "@/store/sideBar";
-
 
 export default function SideBar() {
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -30,6 +30,7 @@ export default function SideBar() {
   const participants = useParticipants();
   const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore();
   const { chatMessages, send } = useChat();
+  const { localParticipant } = useLocalParticipant();
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -134,40 +135,41 @@ export default function SideBar() {
           <div className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-4">
               {chatMessages.map(
-                ({ id, message, timestamp, from }: ReceivedChatMessage) => (
-                  from && <div
-                    key={id}
-                    className={`flex flex-col ${from.allParticipantsAllowedToSubscribe ? "bg-primary/15" : "bg-gray-100 dark:bg-neutral-800"} rounded-lg py-3 px-4`}
-                  >
-                    <div className="flex items-center mb-1">
-                      <span
+                ({ id, message, timestamp, from }: ReceivedChatMessage) =>
+                  from && (
+                    <div
+                      key={id}
+                      className={`flex flex-col ${from.identity === localParticipant.identity ? "bg-primary/15" : "bg-gray-100 dark:bg-neutral-800"} rounded-lg py-3 px-4`}
+                    >
+                      <div className="flex items-center mb-1">
+                        <span
+                          className={cn(
+                            "font-medium mr-2",
+                            from.identity === localParticipant.identity &&
+                              "text-blue-500 dark:text-blue-400",
+                          )}
+                        >
+                          {from.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(timestamp).toLocaleTimeString("en-IN", {
+                            hour12: true,
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <p
                         className={cn(
-                          "font-medium mr-2",
-                          from.allParticipantsAllowedToSubscribe &&
-                          "text-blue-500 dark:text-blue-400",
+                          "text-foreground",
+                          from.identity === localParticipant.identity &&
+                            "text-muted-foreground italic",
                         )}
                       >
-                        {from.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(timestamp).toLocaleTimeString("en-IN", {
-                          hour12: true,
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                        {message}
+                      </p>
                     </div>
-                    <p
-                      className={cn(
-                        "text-foreground",
-                        from.allParticipantsAllowedToSubscribe &&
-                        "text-muted-foreground italic",
-                      )}
-                    >
-                      {message}
-                    </p>
-                  </div>
-                ),
+                  ),
               )}
               <div ref={chatEndRef} />
             </div>
@@ -190,4 +192,4 @@ export default function SideBar() {
       </Tabs>
     </div>
   );
-};
+}

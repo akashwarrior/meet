@@ -24,7 +24,7 @@ Meet is an open‑source video meeting application built on Next.js and LiveKit.
 - **Realtime**: LiveKit (client SDK + server token issuance)
 - **Backend**: Next.js API routes (Node.js)
 - **Database/ORM**: PostgreSQL + Prisma
-- **Authentication**: NextAuth (Credentials)
+- **Authentication**: Better Auth (Email/Password)
 - **State Management**: Zustand
 
 ## Getting Started
@@ -38,7 +38,7 @@ Before running the app, configure environment variables. See Environment Variabl
 
 ### Setup Options
 
-1) Clone and Install
+1. Clone and Install
 
 ```bash
 git clone https://github.com/akashwarrior/meet.git
@@ -46,7 +46,7 @@ cd meet
 npm install
 ```
 
-2) Start PostgreSQL (Local, via Docker)
+2. Start PostgreSQL (Local, via Docker)
 
 ```bash
 docker run -d \
@@ -57,7 +57,7 @@ docker run -d \
   -p 5432:5432 postgres
 ```
 
-3) Configure Environment
+3. Configure Environment
 
 Copy the existing `.env.example` to `.env` and update the values as needed:
 
@@ -72,30 +72,31 @@ copy .env.example .env
 Example values:
 
 ```env
+NODE_ENV='development'
+
+# Better Auth
+BETTER_AUTH_URL='http://localhost:3000'
+BETTER_AUTH_SECRET='your_long_random_string'
+
+# Database URL
 DATABASE_URL="postgresql://postgres:mysecretpassword@localhost:5432/meet"
 
-# NextAuth
-NEXTAUTH_SECRET=your_long_random_string
-# Recommended for NextAuth callbacks and URLs in development
-NEXTAUTH_URL=http://localhost:3000
+# LiveKit WebSocket URL (Cloud or self-hosted)
+NEXT_PUBLIC_LIVEKIT_URL=ws://127.0.0.1:7880
 
-# Optional cookie domain for auth (omit in local dev)
-# BASE_URL=your-domain.com
-
-# LiveKit
-LIVEKIT_API_KEY=your_livekit_api_key
-LIVEKIT_API_SECRET=your_livekit_api_secret
-NEXT_PUBLIC_LIVEKIT_URL=wss://your-livekit-host
+# API credentials used server-side to mint room tokens
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=secret
 ```
 
-4) Initialize the Database
+4. Initialize the Database
 
 ```bash
 npm run generate
 npm run db:migrate
 ```
 
-5) Start the App
+5. Start the App
 
 ```bash
 npm run dev
@@ -107,12 +108,12 @@ Open http://localhost:3000
 
 Required for a typical local setup:
 
+- **NODE_ENV**: Application environment (`development` or `production`)
 - **DATABASE_URL**: PostgreSQL connection string
-- **NEXTAUTH_SECRET**: Secret used to sign NextAuth tokens
-- **NEXTAUTH_URL**: Public application URL (http in dev)
+- **BETTER_AUTH_URL**: Public application URL (http://localhost:3000 in dev)
+- **BETTER_AUTH_SECRET**: Secret used to sign Better Auth tokens
 - **LIVEKIT_API_KEY** and **LIVEKIT_API_SECRET**: Credentials to mint LiveKit access tokens
-- **NEXT_PUBLIC_LIVEKIT_URL**: LiveKit WebSocket URL (e.g., `wss://your-livekit-host`)
-- **BASE_URL** (optional): Cookie domain for auth; leave unset in development
+- **NEXT_PUBLIC_LIVEKIT_URL**: LiveKit WebSocket URL (e.g., `ws://127.0.0.1:7880` for local or `wss://your-livekit-host` for cloud)
 
 Use `.env.example` as your starting point. Copy it to `.env` and then edit values to match your local/production environment.
 
@@ -120,9 +121,9 @@ Use `.env.example` as your starting point. Copy it to `.env` and then edit value
 
 You can use LiveKit Cloud or a self‑hosted LiveKit server.
 
-1) Create API credentials and obtain your WS URL.
-2) Set `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `NEXT_PUBLIC_LIVEKIT_URL` in `.env`.
-3) The app will mint per‑user room tokens via `GET /api/token?meetingId=...&username=...`.
+1. Create API credentials and obtain your WS URL.
+2. Set `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `NEXT_PUBLIC_LIVEKIT_URL` in `.env`.
+3. The app will mint per‑user room tokens via `GET /api/token?meetingId=...&username=...`.
 
 ## Database
 
@@ -134,12 +135,11 @@ The project uses Prisma with PostgreSQL.
 
 ## Authentication
 
-Meet uses NextAuth with the Credentials provider. Default routes:
+Meet uses Better Auth with email/password authentication. Authentication routes:
 
-- Sign in: `/auth/login`
-- Sign up: `/auth/signup`
+- Sign in/Sign up: `/auth`
 
-Set `NEXTAUTH_SECRET` (and `NEXTAUTH_URL` in development) in `.env`. For custom domains, set `BASE_URL` to your cookie domain if needed.
+Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in `.env`. Better Auth provides a more modern, type-safe authentication solution with built-in session management and security features.
 
 ## API Overview
 

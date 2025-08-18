@@ -2,15 +2,16 @@
 
 import ThemeToggle from "@/components/theme-toggle";
 import LiveClock from "@/components/liveClock";
-import { signIn, signOut, useSession } from "next-auth/react";
 import { Button } from "./ui/button";
+import { signOut, useSession } from "@/lib/auth/auth-client";
 import Link from "next/link";
 
 export default function Header() {
   const { data: session } = useSession();
+
   return (
     <header className="w-full h-16 px-4 flex items-center justify-between">
-      <Link href="/" className="flex items-center">
+      <Link href="/" prefetch={false} className="flex items-center">
         <svg
           viewBox="0 0 87 30"
           className="h-6 w-auto text-foreground"
@@ -31,13 +32,11 @@ export default function Header() {
             {session.user.name?.charAt(0).toUpperCase()}
           </Button>
         ) : (
-          <Button
-            type="submit"
-            onClick={() => signIn()}
-            className="px-6 rounded-md"
-          >
-            Sign In
-          </Button>
+          <Link href="/auth">
+            <Button type="submit" className="px-6 rounded-md">
+              Sign In
+            </Button>
+          </Link>
         )}
       </div>
     </header>

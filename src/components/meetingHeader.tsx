@@ -120,10 +120,8 @@ export default function MeetingHeader({ meetingId }: { meetingId: string }) {
               Copy joining info
             </DropdownMenuItem>
           </DropdownMenuContent>
-
         </DropdownMenu>
       </div>
     </header>
   );
-};
-
+}

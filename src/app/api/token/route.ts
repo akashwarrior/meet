@@ -7,6 +7,7 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   const meetingId = req.nextUrl.searchParams.get("meetingId");
   const username = req.nextUrl.searchParams.get("username");
+
   if (!meetingId || !username) {
     return NextResponse.json(
       { error: "Missing query parameter" },
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
     identity: username,
     name: username,
   });
+
   token.addGrant({
     room: meetingId,
     roomJoin: true,

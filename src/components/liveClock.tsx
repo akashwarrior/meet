@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
 export default function LiveClock() {
-  const [time, setTime] = useState<Date | null>(null); // Cannot initialize here - [Hydration Issue]
+  const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (!time) {
-      setTime(new Date());
-    }
+    setTime(new Date());
     const secondsLeft = 60 - new Date().getSeconds();
     const updateInterval = secondsLeft * 1000;
 
@@ -18,7 +16,7 @@ export default function LiveClock() {
     return () => {
       clearTimeout(interval);
     };
-  }, [time]);
+  }, []);
 
   return (
     time && (

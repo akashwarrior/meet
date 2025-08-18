@@ -171,8 +171,8 @@ export default function SettingsDialog({
                     value={
                       videoDevices?.[0]?.deviceId
                         ? videoDevices.find(
-                          (device) => device.deviceId === videoActiveDeviceId,
-                        )?.deviceId || videoDevices[0].deviceId
+                            (device) => device.deviceId === videoActiveDeviceId,
+                          )?.deviceId || videoDevices[0].deviceId
                         : "Permission needed"
                     }
                     onValueChange={(deviceId) => setVideoActiveDevice(deviceId)}
@@ -384,8 +384,8 @@ export default function SettingsDialog({
                   value={
                     audioDevices?.[0]?.deviceId
                       ? audioDevices.find(
-                        (device) => device.deviceId === audioActiveDeviceId,
-                      )?.deviceId || audioDevices[0].deviceId
+                          (device) => device.deviceId === audioActiveDeviceId,
+                        )?.deviceId || audioDevices[0].deviceId
                       : "Permission needed"
                   }
                   onValueChange={(deviceId) => setAudioActiveDevice(deviceId)}
@@ -417,7 +417,7 @@ export default function SettingsDialog({
                   </h3>
                   <Switch
                     defaultChecked={!!audioDevices?.[0]?.deviceId}
-                    onCheckedChange={() => { }}
+                    onCheckedChange={() => {}}
                     disabled={!audioDevices?.[0]?.deviceId}
                     className="shadow cursor-pointer"
                   />
@@ -437,9 +437,9 @@ export default function SettingsDialog({
                     value={
                       speakerDevices?.[0]?.deviceId
                         ? speakerDevices.find(
-                          (device) =>
-                            device.deviceId === speakerActiveDeviceId,
-                        )?.deviceId || speakerDevices[0].deviceId
+                            (device) =>
+                              device.deviceId === speakerActiveDeviceId,
+                          )?.deviceId || speakerDevices[0].deviceId
                         : "Permission needed"
                     }
                     onValueChange={(deviceId) =>
