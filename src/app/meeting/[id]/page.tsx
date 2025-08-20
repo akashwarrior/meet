@@ -1,4 +1,4 @@
-import Meeting from "@/components/meeting/Meeting";
+import Meeting from "@/components/meeting/meeting";
 import prisma from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 

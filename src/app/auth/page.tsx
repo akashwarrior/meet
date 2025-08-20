@@ -8,8 +8,10 @@ import { Eye, EyeOff } from "lucide-react";
 import { signIn, signUp } from "@/lib/auth/auth-client";
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
 
 export default function Auth() {
+  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,6 +37,7 @@ export default function Auth() {
           onRequest: () => setLoading(true),
           onSuccess: () => {
             toast.success("Account created successfully");
+            router.back();
           },
           onError: (ctx) => {
             toast.error("Something went wrong", {

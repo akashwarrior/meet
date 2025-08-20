@@ -1,32 +1,25 @@
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import Image from "next/image";
 import useMeetingPrefsStore from "@/store/meetingPrefs";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
-export default function PermissionDialog() {
+interface PermissionDialogProps {
+  showDialog: boolean;
+  setShowDialog: (show: boolean) => void;
+}
+
+export default function PermissionDialog({
+  showDialog,
+  setShowDialog,
+}: PermissionDialogProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const setMeetingPrefs = useMeetingPrefsStore(
     (state) => state.setMeetingPrefs,
   );
-  const [showDialog, setShowDialog] = useState(false);
-
-  useEffect(() => {
-    if (navigator.permissions) {
-      const cameraResult = navigator.permissions.query({ name: "camera" });
-      const micResult = navigator.permissions.query({ name: "microphone" });
-      Promise.all([cameraResult, micResult]).then(
-        ([cameraResult, micResult]) => {
-          if (cameraResult.state === "prompt" && micResult.state === "prompt") {
-            setShowDialog(true);
-          }
-        },
-      );
-    }
-  }, []);
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>

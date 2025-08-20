@@ -2,8 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Button } from "./ui/button";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Button } from "@/components/ui/button";
 import { FormEvent, useEffect, useRef } from "react";
 import useSidebarOpenStore from "@/store/sideBar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -101,11 +100,9 @@ export default function SideBar() {
                   className="flex items-center justify-between py-2"
                 >
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-green-500">
-                        {name?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="bg-green-500 h-8 w-8">
+                      {name?.charAt(0)}
+                    </div>
                     <span>{name}</span>
                   </div>
                   <div className="flex items-center gap-3">
