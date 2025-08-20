@@ -1,7 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import LiveClock from "@/components/liveClock";
@@ -49,11 +48,14 @@ export default function MeetingFooter() {
 
   const toggleVideo = async () => {
     try {
-      await localParticipant.setCameraEnabled(!isCameraEnabled, {
-        deviceId: videoDeviceId,
-        facingMode: facingMode,
-        resolution: resolution,
-      });
+      await localParticipant.setCameraEnabled(
+        !isCameraEnabled,
+        {
+          deviceId: videoDeviceId,
+          facingMode: facingMode,
+          resolution: resolution,
+        }
+      );
     } catch (err) {
       console.log(err);
       toast.error("Failed to toggle video", {
@@ -65,9 +67,12 @@ export default function MeetingFooter() {
 
   const toggleMic = async () => {
     try {
-      await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled, {
-        deviceId: audioDeviceId,
-      });
+      await localParticipant.setMicrophoneEnabled(
+        !isMicrophoneEnabled,
+        {
+          deviceId: audioDeviceId,
+        }
+      );
     } catch (err) {
       toast.error("Failed to toggle audio", {
         description:
@@ -79,66 +84,53 @@ export default function MeetingFooter() {
   const leaveCall = () => router.push("/");
 
   return (
-    <footer className="bg-background border-t border-border py-4 flex relative">
-      <div className="text-sm text-muted-foreground absolute left-10 top-0 bottom-0 hidden sm:flex">
+    <footer className="bg-background border-t border-border py-3 flex items-center relative">
+
+      <div className="text-sm text-muted-foreground absolute left-4 hidden sm:flex items-center">
         <LiveClock />
       </div>
+
       <div className="flex items-center gap-2 mx-auto">
         <Button
           size="icon"
-          variant={!isMicrophoneEnabled ? "destructive" : "secondary"}
+          variant={isMicrophoneEnabled ? "default" : "secondary"}
           onClick={toggleMic}
-          className="rounded-full h-12 w-12"
+          className="rounded-full h-11 w-11 transition-colors"
         >
-          {!isMicrophoneEnabled ? (
-            <MicOff className="h-5 w-5" />
-          ) : (
-            <Mic className="h-5 w-5" />
-          )}
+          {!isMicrophoneEnabled ? <MicOff /> : <Mic />}
         </Button>
 
         <Button
           size="icon"
-          variant={!isCameraEnabled ? "destructive" : "secondary"}
+          variant={isCameraEnabled ? "default" : "secondary"}
           onClick={toggleVideo}
-          className="rounded-full h-12 w-12"
+          className=
+          "rounded-full h-11 w-11 transition-colors"
         >
-          {!isCameraEnabled ? (
-            <VideoOff className="h-5 w-5" />
-          ) : (
-            <Video className="h-5 w-5" />
-          )}
+          {!isCameraEnabled ? <VideoOff /> : <Video />}
         </Button>
 
         <Button
           onClick={() => toggleSidebar("chat")}
-          variant="secondary"
+          variant={sidebarOpen === 'chat' ? "default" : "secondary"}
           size="icon"
-          className={cn(
-            "rounded-full h-12 w-12",
-            sidebarOpen === "chat" && "bg-primary/90 hover:bg-primary/50",
-          )}
+          className="rounded-full h-11 w-11 transition-colors"
         >
-          <MessageSquare className="h-5 w-5" />
+          <MessageSquare />
         </Button>
 
         <Button
           onClick={() => toggleSidebar("participants")}
-          variant="secondary"
+          variant={sidebarOpen === 'participants' ? "default" : "secondary"}
           size="icon"
-          className={cn(
-            "rounded-full h-12 w-12",
-            sidebarOpen === "participants" &&
-              "bg-primary/90 hover:bg-primary/50",
-          )}
+          className="rounded-full h-11 w-11 transition-colors"
         >
-          <Users className="h-5 w-5" />
+          <Users />
         </Button>
 
         <DisconnectButton
-          className="flex items-center justify-center rounded-full h-12 px-4 bg-destructive hover:bg-destructive/50! cursor-pointer dark:bg-destructive/60 text-white"
           onClick={leaveCall}
-        >
+          className={buttonVariants({ variant: "default" }) + " rounded-full! p-5!"}>
           <Phone className="h-5 w-5 md:mr-2" />
           <span className="hidden md:inline">Leave</span>
         </DisconnectButton>

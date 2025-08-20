@@ -11,7 +11,7 @@ import PermissionDialog from "./permissionDialog";
 import DeviceSelection from "./deviceSelection";
 import SettingsDialog from "./settingsDialog";
 import { useSession } from "@/lib/auth/auth-client";
-import { EllipsisVertical, Mic, MicOff, Video, VideoOff } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 import {
   useMediaDeviceSelect,
   useRoomContext,
@@ -125,7 +125,7 @@ export default function PreMeeting({ meetingId }: PreMeetingProps) {
             <VideoControls />
           </div>
 
-          {!showDialog ? <DeviceSelection /> : <DeviceSelection />}
+          {!showDialog && <DeviceSelection />}
         </div>
 
         <JoinMeeting meetingId={meetingId} />
@@ -171,15 +171,7 @@ const VideoControls = () => {
       </div>
 
       <div className="absolute top-0 left-0 right-0 flex bg-gradient-to-b from-black/50 to-transparent p-3 justify-end items-center">
-        <SettingsDialog>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full text-white hover:bg-primary/50"
-          >
-            <EllipsisVertical className="w-5! h-5!" />
-          </Button>
-        </SettingsDialog>
+        <SettingsDialog />
       </div>
     </>
   );

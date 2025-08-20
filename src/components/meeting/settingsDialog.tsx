@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import type { VideoPreset } from "livekit-client";
 import useMeetingPrefsStore, { Codecs } from "@/store/meetingPrefs";
 import { useVideoResolutions } from "@/hooks/useVideoResolutions";
 import { useMediaDevices } from "@/hooks/useMediaDevices";
@@ -32,6 +31,7 @@ import {
   Speaker,
   Monitor,
   Settings,
+  EllipsisVertical,
 } from "lucide-react";
 
 interface DeviceSelectProps {
@@ -69,7 +69,7 @@ const DeviceSelect = ({
   const hasDevices = devices?.[0]?.deviceId;
   const selectedDevice = hasDevices
     ? devices.find((device) => device.deviceId === activeDeviceId)?.deviceId ||
-      devices[0].deviceId
+    devices[0].deviceId
     : "no-permission";
 
   return (
@@ -114,8 +114,9 @@ const DeviceSelect = ({
   );
 };
 
-const VideoSettings = ({ resolutions }: { resolutions: VideoPreset[] }) => {
+const VideoSettings = () => {
   const { videoDevices } = useMediaDevices();
+  const resolutions = useVideoResolutions(videoDevices.devices);
   const { resolution, videoCodec, facingMode } = useMeetingPrefsStore(
     (state) => state.video,
   );
@@ -309,18 +310,20 @@ const AudioSettings = () => {
   );
 };
 
-export default function SettingsDialog({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SettingsDialog() {
   const [isVideoTab, setIsVideoTab] = useState<boolean>(true);
-  const { videoDevices } = useMediaDevices();
-  const resolutions = useVideoResolutions(videoDevices.devices);
 
   return (
     <Dialog defaultOpen={false}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="rounded-full text-white hover:bg-primary/50"
+        >
+          <EllipsisVertical className="w-5! h-5!" />
+        </Button>
+      </DialogTrigger>
 
       <DialogTitle />
 
@@ -364,9 +367,9 @@ export default function SettingsDialog({
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 p-3 text-sm font-medium transition-all",
                   isActive &&
-                    "text-primary border-b-2 border-primary bg-background",
+                  "text-primary border-b-2 border-primary bg-background",
                   !isActive &&
-                    "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -378,7 +381,7 @@ export default function SettingsDialog({
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {isVideoTab ? (
-            <VideoSettings resolutions={resolutions} />
+            <VideoSettings />
           ) : (
             <AudioSettings />
           )}
