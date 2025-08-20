@@ -54,11 +54,10 @@ const DeviceDropdown = ({
             <DropdownMenuItem
               key={device.deviceId}
               onClick={() => onDeviceChange(device.deviceId)}
-              className={`cursor-pointer px-4 py-3.5 hover:bg-primary/20 border-b ${
-                device.deviceId === activeDeviceId
+              className={`cursor-pointer px-4 py-3.5 hover:bg-primary/20 border-b ${device.deviceId === activeDeviceId
                   ? "bg-primary/15 hover:bg-primary/20"
                   : ""
-              }`}
+                }`}
             >
               {device.label}
             </DropdownMenuItem>

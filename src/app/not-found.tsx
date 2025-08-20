@@ -29,7 +29,7 @@ export default function NotFound() {
             </h1>
 
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              The route you're looking for doesn't exist. Let's get you back to
+              The route you&apos;re looking for doesn&apos;t exist. Let&apos;s get you back to
               connecting with others.
             </p>
 

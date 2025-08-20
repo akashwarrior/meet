@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import Participant from "./participant";
 import { useMediaQuery } from "usehooks-ts";
-import { useParticipants } from "@livekit/components-react";
+import { RoomAudioRenderer, useParticipants } from "@livekit/components-react";
 import { LucideChevronLeft, LucideChevronRight } from "lucide-react";
 
 export default function VideoGrid() {
@@ -41,45 +41,57 @@ export default function VideoGrid() {
   };
 
   return (
-    <>
+    <div className="flex-1 relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-muted/30 via-transparent to-accent/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_40%,rgba(var(--primary),0.02)_50%,transparent_60%)] pointer-events-none" />
+
+      <RoomAudioRenderer />
+
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.2 }}
-        className={cn("h-full w-full p-2 grid gap-2 ", getGridClass())}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className={cn(
+          "h-full w-full p-4 grid gap-3 relative z-10",
+          getGridClass()
+        )}
       >
         {currentParticipants.map(
-          ({ sid, identity, name, isCameraEnabled, isMicrophoneEnabled }) => (
+          ({ identity, name, isCameraEnabled, isMicrophoneEnabled, videoTrackPublications }) => (
             <Participant
-              key={sid}
+              key={identity}
               identity={identity}
               userName={name || "Unknown"}
               isCameraEnabled={isCameraEnabled}
               isMicrophoneEnabled={isMicrophoneEnabled}
+              videoTrackPublications={videoTrackPublications}
             />
           ),
         )}
       </motion.div>
 
       {totalPages > 1 && (
-        <div className="absolute bottom-20 left-0 w-full flex justify-center items-center space-x-2 z-50">
+        <div className="absolute bottom-24 left-0 w-full flex justify-center items-center space-x-3 z-50">
           <Button
             size="icon"
-            className="rounded-full bg-primary text-white"
+            className="rounded-full bg-card/90 backdrop-blur-md border border-border/50 text-foreground hover:bg-primary hover:text-primary-foreground shadow-lg transition-all duration-200"
             onClick={() => setCurrentPage((prev) => prev - 1)}
             disabled={currentPage === 0}
           >
             <LucideChevronLeft className="h-4 w-4" />
           </Button>
 
-          <div className="flex space-x-1">
+          <div className="flex space-x-2 bg-card/90 backdrop-blur-md rounded-full px-3 py-2 border border-border/50 shadow-lg">
             {Array.from({ length: totalPages }, (_, index) => (
-              <div
+              <button
                 key={index}
+                onClick={() => setCurrentPage(index)}
                 className={cn(
                   "h-2 w-2 rounded-full shadow border",
-                  currentPage === index ? "bg-primary" : "bg-gray-400",
+                  currentPage === index
+                    ? "bg-primary shadow-md scale-125"
+                    : "bg-muted-foreground/40 hover:bg-muted-foreground/60"
                 )}
               />
             ))}
@@ -87,7 +99,7 @@ export default function VideoGrid() {
 
           <Button
             size="icon"
-            className="rounded-full bg-primary text-white"
+            className="rounded-full bg-card/90 backdrop-blur-md border border-border/50 text-foreground hover:bg-primary hover:text-primary-foreground shadow-lg transition-all duration-200"
             onClick={() => setCurrentPage((prev) => prev + 1)}
             disabled={currentPage === totalPages - 1}
           >
@@ -95,6 +107,6 @@ export default function VideoGrid() {
           </Button>
         </div>
       )}
-    </>
+    </div>
   );
 }

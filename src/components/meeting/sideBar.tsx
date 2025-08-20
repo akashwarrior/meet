@@ -100,8 +100,8 @@ export default function SideBar() {
                   className="flex items-center justify-between py-2"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="bg-green-500 h-8 w-8">
-                      {name?.charAt(0)}
+                    <div className="bg-green-500 h-8 w-8 rounded-full flex items-center justify-center text-white font-medium">
+                      {name?.charAt(0).toUpperCase()}
                     </div>
                     <span>{name}</span>
                   </div>
@@ -143,7 +143,7 @@ export default function SideBar() {
                           className={cn(
                             "font-medium mr-2",
                             from.identity === localParticipant.identity &&
-                              "text-blue-500 dark:text-blue-400",
+                            "text-blue-500 dark:text-blue-400",
                           )}
                         >
                           {from.name}
@@ -160,7 +160,7 @@ export default function SideBar() {
                         className={cn(
                           "text-foreground",
                           from.identity === localParticipant.identity &&
-                            "text-muted-foreground italic",
+                          "text-muted-foreground italic",
                         )}
                       >
                         {message}
