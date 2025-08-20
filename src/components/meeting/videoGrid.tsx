@@ -3,11 +3,11 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { LucideChevronLeft, LucideChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 import Participant from "./participant";
-import { useParticipants } from "@livekit/components-react";
 import { useMediaQuery } from "usehooks-ts";
+import { useParticipants } from "@livekit/components-react";
+import { LucideChevronLeft, LucideChevronRight } from "lucide-react";
 
 export default function VideoGrid() {
   const participants = useParticipants();

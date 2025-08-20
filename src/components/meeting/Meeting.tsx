@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PreMeeting from "../preMeeting";
+import PreMeeting from "./preMeeting";
 import { RoomContext } from "@livekit/components-react";
 import { Room } from "livekit-client";
-import VideoGrid from "@/components/videoGrid";
-import SideBar from "@/components/sideBar";
-import MeetingHeader from "@/components/meetingHeader";
-import MeetingFooter from "@/components/meetingFooter";
+import VideoGrid from "@/components/meeting/videoGrid";
+import SideBar from "@/components/meeting/sideBar";
+import MeetingHeader from "@/components/meeting/meetingHeader";
+import MeetingFooter from "@/components/meeting/meetingFooter";
 
 export default function Meeting({ meetingId }: { meetingId: string }) {
   const [ready, setReady] = useState(false);

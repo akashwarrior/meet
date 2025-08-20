@@ -2,10 +2,10 @@
 
 import { toast } from "sonner";
 import { useState } from "react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { Info, UserPlus, Copy, Shield } from "lucide-react";
-import { Input } from "./ui/input";
-import ThemeToggle from "./theme-toggle";
+import { Input } from "@/components/ui/input";
+import ThemeToggle from "@/components/themeToggle";
 import { RoomAudioRenderer } from "@livekit/components-react";
 import {
   Dialog,
@@ -14,14 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog";
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 export default function MeetingHeader({ meetingId }: { meetingId: string }) {
   const [showInviteDialog, setShowInviteDialog] = useState(false);

@@ -1,10 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import LiveClock from "./liveClock";
+import LiveClock from "@/components/liveClock";
 import useSidebarOpenStore from "@/store/sideBar";
 import useMeetingPrefsStore from "@/store/meetingPrefs";
 import {

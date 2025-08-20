@@ -1,11 +1,17 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { Mic, MicOff } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useParticipantTracks } from "@livekit/components-react";
 import { Track } from "livekit-client";
+
+interface ParticipantProps {
+  identity: string;
+  userName: string;
+  isCameraEnabled: boolean;
+  isMicrophoneEnabled: boolean;
+}
 
 const Participant = memo(
   ({
@@ -13,22 +19,14 @@ const Participant = memo(
     userName,
     isCameraEnabled,
     isMicrophoneEnabled,
-  }: {
-    identity: string;
-    userName: string;
-    isCameraEnabled: boolean;
-    isMicrophoneEnabled: boolean;
-  }) => {
+  }: ParticipantProps) => {
     const tracks = useParticipantTracks(
       [Track.Source.Microphone, Track.Source.Camera],
       identity,
     );
-    const videoTrack: Track | undefined = useMemo(
-      () =>
-        tracks?.filter(({ source }) => source === Track.Source.Camera)[0]
-          ?.publication?.track,
-      [tracks],
-    );
+    const videoTrack = tracks?.filter(
+      ({ source }) => source === Track.Source.Camera,
+    )[0]?.publication?.track;
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -81,8 +79,7 @@ const Participant = memo(
               <div className="absolute bottom-20 left-20 bg-[#3291ff] w-1/4 h-1/4 dark:w-1/6 dark:h-1/6 blur-[150px] rounded-full"></div>
               <div className="absolute top-20 right-20 bg-[#79ffe1] w-1/4 h-1/4 dark:w-1/6 dark:h-1/6 blur-[150px] rounded-full"></div>
             </div>
-            <Avatar
-              className="bg-white/50 dark:bg-[rgba(26,_115,_232,_0.15)] shadow z-20 text-gray-600 dark:text-[rgb(26,_115,_232)]"
+            <div
               ref={(element) => {
                 if (element) {
                   const width = element.parentElement?.clientWidth || 1;
@@ -96,15 +93,10 @@ const Participant = memo(
                   element.style.fontSize = `${maxSize / 5}px`;
                 }
               }}
+              className="bg-primary-foreground text-primary text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full"
             >
-              <AvatarImage
-                className="w-1/2 m-auto"
-                src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${userName}`}
-              />
-              <AvatarFallback className="bg-transparent">
-                {userName.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+              {userName.charAt(0)}
+            </div>
           </motion.div>
         )}
       </motion.div>

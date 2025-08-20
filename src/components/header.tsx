@@ -1,16 +1,18 @@
 "use client";
 
-import ThemeToggle from "@/components/theme-toggle";
+import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/themeToggle";
 import LiveClock from "@/components/liveClock";
-import { Button } from "./ui/button";
-import { signOut, useSession } from "@/lib/auth/auth-client";
+import { useSession } from "@/lib/auth/auth-client";
+import ProfileDropdown from "@/components/profileDropdown";
 import Link from "next/link";
 
 export default function Header() {
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   return (
-    <header className="w-full h-16 px-4 flex items-center justify-between">
+    <header className="w-full h-16 px-4 flex items-center justify-between overflow-hidden">
       <Link href="/" prefetch={false} className="flex items-center">
         <svg
           viewBox="0 0 87 30"
@@ -24,19 +26,22 @@ export default function Header() {
       <div className="flex items-center space-x-4">
         <LiveClock />
         <ThemeToggle />
-        {session?.user ? (
-          <Button
-            onClick={() => signOut()}
-            className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white font-medium"
-          >
-            {session.user.name?.charAt(0).toUpperCase()}
-          </Button>
-        ) : (
-          <Link href="/auth">
-            <Button type="submit" className="px-6 rounded-md">
-              Sign In
-            </Button>
-          </Link>
+
+        {!isPending && (
+          <motion.div initial={{ width: 0 }} animate={{ width: "auto" }}>
+            {session?.user ? (
+              <ProfileDropdown
+                userName={session.user.name}
+                email={session.user.email}
+              />
+            ) : (
+              <Link href="/auth">
+                <Button type="submit" className="px-6 rounded-md">
+                  Sign In
+                </Button>
+              </Link>
+            )}
+          </motion.div>
         )}
       </div>
     </header>

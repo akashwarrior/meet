@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AccessToken } from "livekit-server-sdk";
-
-// Do not cache endpoint result
-export const revalidate = 0;
+import { auth } from "@/lib/auth/auth";
+import { headers } from "next/headers";
 
 export async function GET(req: NextRequest) {
   const meetingId = req.nextUrl.searchParams.get("meetingId");
-  const username = req.nextUrl.searchParams.get("username");
+  const name = req.nextUrl.searchParams.get("name");
 
-  if (!meetingId || !username) {
-    return NextResponse.json(
-      { error: "Missing query parameter" },
-      { status: 400 },
-    );
+  if (!meetingId || !name) {
+    return NextResponse.json({ error: "Invalid Inputs" }, { status: 400 });
   }
 
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   const apiKey = process.env.LIVEKIT_API_KEY;
   const apiSecret = process.env.LIVEKIT_API_SECRET;
   const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
@@ -27,8 +26,9 @@ export async function GET(req: NextRequest) {
   }
 
   const token = new AccessToken(apiKey, apiSecret, {
-    identity: username,
-    name: username,
+    identity: session?.user.email || "unknown-" + new Date().getTime(),
+    name: name,
+    ttl: 1 * 60 * 60, // 1 hours
   });
 
   token.addGrant({

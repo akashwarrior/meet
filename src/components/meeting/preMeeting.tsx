@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "@/components/header";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -18,17 +18,19 @@ import {
   usePreviewTracks,
 } from "@livekit/components-react";
 
-export default function PreMeeting({ meetingId }: { meetingId: string }) {
+interface PreMeetingProps {
+  meetingId: string;
+}
+
+export default function PreMeeting({ meetingId }: PreMeetingProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const isVideoEnabled = useMeetingPrefsStore(
-    (state) => state.meeting.isVideoEnabled,
-  );
-  const { facingMode, resolution } = useMeetingPrefsStore(
-    (state) => state.video,
-  );
+  const isVideoEnabled = useMeetingPrefsStore((s) => s.meeting.isVideoEnabled);
+  const { facingMode, resolution } = useMeetingPrefsStore((s) => s.video);
+  const [showDialog, setShowDialog] = useState(false);
   const { activeDeviceId: deviceId } = useMediaDeviceSelect({
     kind: "videoinput",
     requestPermissions: false,
+    room: useRoomContext(),
   });
 
   const tracks = usePreviewTracks({
@@ -49,6 +51,56 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
       videoTrack?.detach();
     };
   }, [tracks]);
+
+  useEffect(() => {
+    if (!navigator.permissions) {
+      return;
+    }
+
+    let cameraPermission: PermissionStatus | null = null;
+    let micPermission: PermissionStatus | null = null;
+
+    const handlePermissionChange = () => {
+      if (
+        cameraPermission?.state === "granted" ||
+        micPermission?.state === "granted"
+      ) {
+        setShowDialog(false);
+      }
+    };
+
+    const initializePermissions = async () => {
+      try {
+        const [cameraResult, micResult] = await Promise.all([
+          navigator.permissions.query({ name: "camera" as PermissionName }),
+          navigator.permissions.query({ name: "microphone" as PermissionName }),
+        ]);
+
+        cameraPermission = cameraResult;
+        micPermission = micResult;
+
+        if (cameraResult.state === "prompt" && micResult.state === "prompt") {
+          setShowDialog(true);
+        }
+
+        cameraResult.addEventListener("change", handlePermissionChange);
+        micResult.addEventListener("change", handlePermissionChange);
+      } catch (error) {
+        console.warn("Failed to query permissions:", error);
+      }
+    };
+
+    initializePermissions();
+
+    return () => {
+      if (cameraPermission) {
+        cameraPermission.removeEventListener("change", handlePermissionChange);
+      }
+      if (micPermission) {
+        micPermission.removeEventListener("change", handlePermissionChange);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-[90vh] bg-background flex flex-col items-center justify-center">
@@ -73,27 +125,22 @@ export default function PreMeeting({ meetingId }: { meetingId: string }) {
             <VideoControls />
           </div>
 
-          <DeviceSelection />
+          {!showDialog ? <DeviceSelection /> : <DeviceSelection />}
         </div>
 
         <JoinMeeting meetingId={meetingId} />
       </main>
 
-      <PermissionDialog />
+      <PermissionDialog showDialog={showDialog} setShowDialog={setShowDialog} />
     </div>
   );
 }
 
 const VideoControls = () => {
-  const isAudioEnabled = useMeetingPrefsStore(
-    (state) => state.meeting.isAudioEnabled,
+  const { isAudioEnabled, isVideoEnabled } = useMeetingPrefsStore(
+    (s) => s.meeting,
   );
-  const isVideoEnabled = useMeetingPrefsStore(
-    (state) => state.meeting.isVideoEnabled,
-  );
-  const setMeetingPrefs = useMeetingPrefsStore(
-    (state) => state.setMeetingPrefs,
-  );
+  const setMeetingPrefs = useMeetingPrefsStore((s) => s.setMeetingPrefs);
 
   return (
     <>
@@ -139,14 +186,13 @@ const VideoControls = () => {
 };
 
 const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
-  const { connect, state, options, localParticipant } = useRoomContext();
+  const { connect, state, localParticipant } = useRoomContext();
   const { data: session } = useSession();
-  const nameRef = useRef<HTMLInputElement>(null);
   const { isVideoEnabled, isAudioEnabled } = useMeetingPrefsStore(
-    (state) => state.meeting,
+    (s) => s.meeting,
   );
   const { facingMode, resolution, videoCodec } = useMeetingPrefsStore(
-    (state) => state.video,
+    (s) => s.video,
   );
   const { activeDeviceId: videoDeviceId } = useMediaDeviceSelect({
     kind: "videoinput",
@@ -156,6 +202,7 @@ const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
     kind: "audioinput",
     requestPermissions: false,
   });
+  const nameRef = useRef<HTMLInputElement>(null);
 
   const handleJoinMeeting = async () => {
     const username = nameRef.current?.value.trim();
@@ -167,35 +214,43 @@ const JoinMeeting = ({ meetingId }: { meetingId: string }) => {
     }
     try {
       const res = await fetch(
-        `/api/token?meetingId=${meetingId}&username=${username}`,
+        `/api/token?meetingId=${meetingId}&name=${username}`,
       );
       const data = await res.json();
       if (data.token) {
-        options.publishDefaults!.videoCodec = videoCodec;
-        options.videoCaptureDefaults!.facingMode = facingMode;
-        options.videoCaptureDefaults!.deviceId = videoDeviceId;
-        options.videoCaptureDefaults!.resolution = resolution;
         await connect(
           process.env.NEXT_PUBLIC_LIVEKIT_URL as string,
           data.token,
         );
-        await localParticipant.setCameraEnabled(isVideoEnabled, {
-          deviceId: videoDeviceId,
-          facingMode: facingMode,
-          resolution: resolution,
-        });
-        await localParticipant.setMicrophoneEnabled(isAudioEnabled, {
-          deviceId: audioDeviceId,
-          channelCount: 2,
-          echoCancellation: false,
-          noiseSuppression: false,
-        });
+
+        const cameraPromise = localParticipant.setCameraEnabled(
+          isVideoEnabled,
+          {
+            deviceId: videoDeviceId,
+            facingMode: facingMode,
+            resolution: resolution,
+            frameRate: resolution?.frameRate,
+          },
+          {
+            videoCodec: videoCodec,
+          },
+        );
+
+        const microphonePromise = localParticipant.setMicrophoneEnabled(
+          isAudioEnabled,
+          {
+            deviceId: audioDeviceId,
+          },
+        );
+
+        await Promise.all([cameraPromise, microphonePromise]);
       } else {
-        throw new Error("Failed to connect to the server");
+        throw new Error(data.error || "Failed to get token");
       }
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to connect to the server");
+    } catch (err) {
+      toast.error("Failed to connect to the server", {
+        description: err instanceof Error ? err.message : "Please try again",
+      });
     }
   };
 
