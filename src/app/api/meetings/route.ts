@@ -1,63 +1,47 @@
-import { NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { auth } from "@/lib/auth/auth";
-import { headers } from "next/headers";
-
-const ERROR_CAUSE = "WRONG_INPUTS";
 
 export async function POST(req: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api.getSession({ headers: req.headers });
+
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Sign in to create a meeting" },
+      { status: 401 },
+    );
+  }
+
+  const body = (await req.json()) as { allowGuestJoin?: boolean };
 
   try {
-    if (!session?.user) {
-      console.error("No session found", session);
-      throw new Error("Please login to create a meeting", {
-        cause: ERROR_CAUSE,
-      });
-    }
-
-    const hostId = (
-      await prisma.user.findUnique({
-        where: {
-          email: session.user.email!,
-        },
-        select: {
-          id: true,
-        },
-      })
-    )?.id;
-
-    if (!hostId) {
-      throw new Error("Invalid user ID provided", { cause: ERROR_CAUSE });
-    }
-
-    const meeting = await prisma.meetings.create({
+    const meeting = await prisma.meeting.create({
       data: {
-        hostId,
+        hostId: session.user.id,
+        allowGuestJoin: body?.allowGuestJoin ?? false,
       },
       select: {
         id: true,
+        allowGuestJoin: true,
       },
     });
 
-    const baseUrl = req.nextUrl.origin;
-    return Response.json(
-      { link: `${baseUrl}/meeting/${meeting.id}` },
+    return NextResponse.json(
+      {
+        id: meeting.id,
+        link: new URL(`/meeting/${meeting.id}`, req.nextUrl.origin).toString(),
+        allowGuestJoin: meeting.allowGuestJoin,
+      },
       { status: 200 },
     );
   } catch (err) {
-    return Response.json(
-      {
-        error:
-          err instanceof Error
-            ? err.cause === ERROR_CAUSE && err.message
-            : "Failed to create meeting",
-      },
-      {
-        status: 500,
-      },
+    console.error("Failed to create meeting", {
+      userEmail: session.user.email,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json(
+      { error: "Failed to create meeting" },
+      { status: 500 },
     );
   }
 }

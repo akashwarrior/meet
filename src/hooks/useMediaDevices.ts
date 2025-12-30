@@ -3,24 +3,32 @@ import {
   useRoomContext,
 } from "@livekit/components-react";
 
-export const useMediaDevices = () => {
+type MediaPermissionRequests = {
+  audioInput?: boolean;
+  videoInput?: boolean;
+  audioOutput?: boolean;
+};
+
+export const useMediaDevices = (
+  requestPermissions: MediaPermissionRequests = {},
+) => {
   const room = useRoomContext();
 
   const audioDevices = useMediaDeviceSelect({
     kind: "audioinput",
-    requestPermissions: false,
+    requestPermissions: requestPermissions.audioInput ?? false,
     room,
   });
 
   const videoDevices = useMediaDeviceSelect({
     kind: "videoinput",
-    requestPermissions: false,
+    requestPermissions: requestPermissions.videoInput ?? false,
     room,
   });
 
   const speakerDevices = useMediaDeviceSelect({
     kind: "audiooutput",
-    requestPermissions: false,
+    requestPermissions: requestPermissions.audioOutput ?? false,
     room,
   });
 

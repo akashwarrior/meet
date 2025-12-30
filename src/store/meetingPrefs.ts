@@ -1,54 +1,46 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type Codecs = "vp8" | "h264" | "vp9" | "av1";
+export type FacingMode = "user" | "environment" | "left" | "right";
+export type VideoResolution = {
+  width: number;
+  height: number;
+  frameRate?: number;
+};
 
-interface VideoPrefs {
-  resolution?: {
-    width: number;
-    height: number;
-    frameRate?: number;
-  };
-  facingMode: "user" | "environment" | "left" | "right";
-  videoCodec: Codecs;
-}
-
-interface MeetingPrefs {
-  isVideoEnabled: boolean;
-  isAudioEnabled: boolean;
+interface VideoPrefsPatch {
+  resolution?: VideoResolution;
+  facingMode?: FacingMode;
+  videoCodec?: Codecs;
 }
 
 interface MeetingPrefsState {
-  video: VideoPrefs;
-  meeting: MeetingPrefs;
-  setVideoPrefs: (videoPrefs: Partial<VideoPrefs>) => void;
-  setMeetingPrefs: (meetingPrefs: Partial<MeetingPrefs>) => void;
+  resolution?: VideoResolution;
+  facingMode: FacingMode;
+  videoCodec: Codecs;
+  setVideoPrefs: (videoPrefs: VideoPrefsPatch) => void;
 }
 
 const useMeetingPrefsStore = create<MeetingPrefsState>()(
   persist(
     (set) => ({
-      video: {
-        facingMode: "user",
-        videoCodec: "vp8",
-      },
-      meeting: {
-        isVideoEnabled: false,
-        isAudioEnabled: false,
-      },
+      facingMode: "user",
+      videoCodec: "vp8",
 
       setVideoPrefs: (videoPrefs) =>
-        set((state) => ({
-          video: { ...state.video, ...videoPrefs },
-        })),
-
-      setMeetingPrefs: (meetingPrefs) =>
-        set((state) => ({
-          meeting: { ...state.meeting, ...meetingPrefs },
+        set(() => ({
+          ...videoPrefs,
         })),
     }),
     {
-      name: "meeting-prefs-storage", // key in localStorage
+      name: "meeting-prefs-storage",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        resolution: state.resolution,
+        facingMode: state.facingMode,
+        videoCodec: state.videoCodec,
+      }),
     },
   ),
 );

@@ -1,5 +1,7 @@
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useMediaDevices } from "@/hooks/useMediaDevices";
+import { memo } from "react";
 import { ChevronDown, Mic, Volume2, Video } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,13 +18,13 @@ interface DeviceDropdownProps {
   placeholder: string;
 }
 
-const DeviceDropdown = ({
+const DeviceDropdown = memo(function DeviceDropdown({
   icon,
   devices,
   activeDeviceId,
   onDeviceChange,
   placeholder,
-}: DeviceDropdownProps) => {
+}: DeviceDropdownProps) {
   const hasDevices = devices?.[0]?.deviceId;
   const activeDevice = hasDevices
     ? devices.find((device) => device.deviceId === activeDeviceId)
@@ -47,17 +49,19 @@ const DeviceDropdown = ({
 
       <DropdownMenuContent
         align="start"
-        className="min-w-[var(--radix-dropdown-menu-trigger-width)] bg-background p-0"
+        className="min-w-(--radix-dropdown-menu-trigger-width) bg-background p-0"
       >
         <div className="w-full h-full bg-background overflow-hidden">
           {devices.map((device) => (
             <DropdownMenuItem
               key={device.deviceId}
               onClick={() => onDeviceChange(device.deviceId)}
-              className={`cursor-pointer px-4 py-3.5 hover:bg-primary/20 border-b ${device.deviceId === activeDeviceId
+              className={cn(
+                "cursor-pointer border-b px-4 py-3.5 hover:bg-primary/20",
+                device.deviceId === activeDeviceId
                   ? "bg-primary/15 hover:bg-primary/20"
-                  : ""
-                }`}
+                  : "",
+              )}
             >
               {device.label}
             </DropdownMenuItem>
@@ -66,9 +70,17 @@ const DeviceDropdown = ({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+});
 
-export default function DeviceSelection() {
+export default function DeviceSelection({
+  requestPermissions,
+}: {
+  requestPermissions?: {
+    audioInput?: boolean;
+    videoInput?: boolean;
+    audioOutput?: boolean;
+  };
+}) {
   const {
     audioDevices: {
       activeDeviceId: audioActiveDeviceId,
@@ -85,7 +97,7 @@ export default function DeviceSelection() {
       devices: speakerDevices,
       setActiveMediaDevice: setSpeakerActiveDevice,
     },
-  } = useMediaDevices();
+  } = useMediaDevices(requestPermissions);
 
   return (
     <div className="my-4 gap-3 hidden lg:flex items-center justify-start w-full">

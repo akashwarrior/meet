@@ -2,7 +2,7 @@ import Header from "@/components/header";
 import Image from "next/image";
 import MeetingActions from "@/components/home/meetingActions";
 
-export default async function Home() {
+export default function Home() {
   return (
     <main className="bg-background relative">
       <Header />

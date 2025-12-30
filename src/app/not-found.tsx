@@ -29,8 +29,8 @@ export default function NotFound() {
             </h1>
 
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              The route you&apos;re looking for doesn&apos;t exist. Let&apos;s get you back to
-              connecting with others.
+              The route you&apos;re looking for doesn&apos;t exist. Let&apos;s
+              get you back to connecting with others.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">

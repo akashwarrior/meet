@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import LiveClock from "@/components/liveClock";
 import useSidebarOpenStore from "@/store/sideBar";
 import useMeetingPrefsStore from "@/store/meetingPrefs";
+import { useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
   MessageSquare,
   Mic,
@@ -23,12 +25,20 @@ import {
 
 export default function MeetingFooter() {
   const router = useRouter();
-  const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore();
+  const { sidebarOpen, setSidebarOpen } = useSidebarOpenStore(
+    useShallow((state) => ({
+      sidebarOpen: state.sidebarOpen,
+      setSidebarOpen: state.setSidebarOpen,
+    })),
+  );
+  const { facingMode, resolution } = useMeetingPrefsStore(
+    useShallow((state) => ({
+      facingMode: state.facingMode,
+      resolution: state.resolution,
+    })),
+  );
   const { isCameraEnabled, isMicrophoneEnabled, localParticipant } =
     useLocalParticipant();
-  const { facingMode, resolution } = useMeetingPrefsStore(
-    (state) => state.video,
-  );
   const { activeDeviceId: videoDeviceId } = useMediaDeviceSelect({
     kind: "videoinput",
     requestPermissions: false,
@@ -38,54 +48,55 @@ export default function MeetingFooter() {
     requestPermissions: false,
   });
 
-  const toggleSidebar = (tab: "participants" | "chat" | null) => {
-    if (sidebarOpen === tab) {
-      setSidebarOpen(null);
-    } else {
-      setSidebarOpen(tab);
-    }
-  };
+  const toggleSidebar = useCallback(
+    (tab: "participants" | "chat" | null) => {
+      if (sidebarOpen === tab) {
+        setSidebarOpen(null);
+      } else {
+        setSidebarOpen(tab);
+      }
+    },
+    [setSidebarOpen, sidebarOpen],
+  );
 
-  const toggleVideo = async () => {
+  const toggleVideo = useCallback(async () => {
     try {
-      await localParticipant.setCameraEnabled(
-        !isCameraEnabled,
-        {
-          deviceId: videoDeviceId,
-          facingMode: facingMode,
-          resolution: resolution,
-        }
-      );
+      await localParticipant.setCameraEnabled(!isCameraEnabled, {
+        deviceId: videoDeviceId,
+        facingMode: facingMode,
+        resolution: resolution,
+      });
     } catch (err) {
-      console.log(err);
       toast.error("Failed to toggle video", {
         description:
           err instanceof Error ? err.message : "Error toggling video",
       });
     }
-  };
+  }, [
+    facingMode,
+    isCameraEnabled,
+    localParticipant,
+    resolution,
+    videoDeviceId,
+  ]);
 
-  const toggleMic = async () => {
+  const toggleMic = useCallback(async () => {
     try {
-      await localParticipant.setMicrophoneEnabled(
-        !isMicrophoneEnabled,
-        {
-          deviceId: audioDeviceId,
-        }
-      );
+      await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled, {
+        deviceId: audioDeviceId,
+      });
     } catch (err) {
       toast.error("Failed to toggle audio", {
         description:
           err instanceof Error ? err.message : "Error toggling audio",
       });
     }
-  };
+  }, [audioDeviceId, isMicrophoneEnabled, localParticipant]);
 
-  const leaveCall = () => router.push("/");
+  const leaveCall = useCallback(() => router.push("/"), [router]);
 
   return (
     <footer className="bg-background border-t border-border py-3 flex items-center relative">
-
       <div className="text-sm text-muted-foreground absolute left-4 hidden sm:flex items-center">
         <LiveClock />
       </div>
@@ -104,15 +115,14 @@ export default function MeetingFooter() {
           size="icon"
           variant={isCameraEnabled ? "default" : "secondary"}
           onClick={toggleVideo}
-          className=
-          "rounded-full h-11 w-11 transition-colors"
+          className="rounded-full h-11 w-11 transition-colors"
         >
           {!isCameraEnabled ? <VideoOff /> : <Video />}
         </Button>
 
         <Button
           onClick={() => toggleSidebar("chat")}
-          variant={sidebarOpen === 'chat' ? "default" : "secondary"}
+          variant={sidebarOpen === "chat" ? "default" : "secondary"}
           size="icon"
           className="rounded-full h-11 w-11 transition-colors"
         >
@@ -121,7 +131,7 @@ export default function MeetingFooter() {
 
         <Button
           onClick={() => toggleSidebar("participants")}
-          variant={sidebarOpen === 'participants' ? "default" : "secondary"}
+          variant={sidebarOpen === "participants" ? "default" : "secondary"}
           size="icon"
           className="rounded-full h-11 w-11 transition-colors"
         >
@@ -130,7 +140,10 @@ export default function MeetingFooter() {
 
         <DisconnectButton
           onClick={leaveCall}
-          className={buttonVariants({ variant: "default" }) + " rounded-full! p-5!"}>
+          className={
+            buttonVariants({ variant: "default" }) + " rounded-full! p-5!"
+          }
+        >
           <Phone className="h-5 w-5 md:mr-2" />
           <span className="hidden md:inline">Leave</span>
         </DisconnectButton>

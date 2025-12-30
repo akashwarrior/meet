@@ -1,45 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AccessToken } from "livekit-server-sdk";
+import { getLiveKitEnv } from "@/lib/env.server";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
+import prisma from "@/lib/db";
 
-export async function GET(req: NextRequest) {
-  const meetingId = req.nextUrl.searchParams.get("meetingId");
-  const name = req.nextUrl.searchParams.get("name");
+export async function GET({ nextUrl: { searchParams } }: NextRequest) {
+  const meetingId = searchParams.get("meetingId");
+  const name = searchParams.get("name");
 
-  if (!meetingId || !name) {
-    return NextResponse.json({ error: "Invalid Inputs" }, { status: 400 });
-  }
-
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  const apiKey = process.env.LIVEKIT_API_KEY;
-  const apiSecret = process.env.LIVEKIT_API_SECRET;
-  const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-
-  if (!apiKey || !apiSecret || !wsUrl) {
+  if (meetingId?.length !== 25 || !name?.trim()) {
     return NextResponse.json(
-      { error: "Server misconfigured" },
-      { status: 500 },
+      { error: "A valid meeting ID and participant name are required" },
+      { status: 400 },
     );
   }
 
-  const token = new AccessToken(apiKey, apiSecret, {
-    identity: session?.user.email || "unknown-" + new Date().getTime(),
-    name: name,
-    ttl: 1 * 60 * 60, // 1 hours
+  const meeting = await prisma.meeting.findUnique({
+    where: { id: meetingId },
+    select: { allowGuestJoin: true },
   });
 
-  token.addGrant({
-    room: meetingId,
-    roomJoin: true,
-    canPublish: true,
-    canSubscribe: true,
-  });
+  if (!meeting) {
+    return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
+  }
 
-  return NextResponse.json(
-    { token: await token.toJwt() },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  let hasSession = false;
+
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    hasSession = Boolean(session?.user);
+
+    if (!session?.user && !meeting.allowGuestJoin) {
+      return NextResponse.json(
+        {
+          error:
+            "Guest access is disabled for this meeting. Sign in to continue.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const liveKitEnv = getLiveKitEnv();
+
+    const token = new AccessToken(
+      liveKitEnv.liveKitApiKey,
+      liveKitEnv.liveKitApiSecret,
+      {
+        identity: session?.user.email ?? `guest-${crypto.randomUUID()}`,
+        name,
+        ttl: "15m",
+      },
+    );
+
+    token.addGrant({
+      room: meetingId,
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true,
+    });
+
+    return NextResponse.json(
+      { token: await token.toJwt() },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    console.error("Failed to create LiveKit token", {
+      meetingId,
+      hasSession,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json(
+      { error: "Failed to create meeting token" },
+      { status: 500 },
+    );
+  }
 }

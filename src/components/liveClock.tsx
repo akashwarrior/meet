@@ -8,13 +8,20 @@ export default function LiveClock() {
 
   useEffect(() => {
     setTime(new Date());
-    const secondsLeft = 60 - new Date().getSeconds();
-    const updateInterval = secondsLeft * 1000;
+    const timeoutDuration = (60 - new Date().getSeconds()) * 1000;
+    let interval: ReturnType<typeof setInterval> | undefined;
 
-    const interval = setTimeout(() => setTime(new Date()), updateInterval);
+    const timeout = setTimeout(() => {
+      setTime(new Date());
+      interval = setInterval(() => setTime(new Date()), 60_000);
+    }, timeoutDuration);
 
     return () => {
-      clearTimeout(interval);
+      clearTimeout(timeout);
+
+      if (interval) {
+        clearInterval(interval);
+      }
     };
   }, []);
 

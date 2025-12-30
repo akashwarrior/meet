@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import Image from "next/image";
-import useMeetingPrefsStore from "@/store/meetingPrefs";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -10,16 +9,50 @@ import { toast } from "sonner";
 interface PermissionDialogProps {
   showDialog: boolean;
   setShowDialog: (show: boolean) => void;
+  setIsAudioEnabled: (enabled: boolean) => void;
+  setIsVideoEnabled: (enabled: boolean) => void;
+  onPermissionGranted: (kind: "audio" | "video" | "both") => void;
 }
 
 export default function PermissionDialog({
   showDialog,
   setShowDialog,
+  setIsAudioEnabled,
+  setIsVideoEnabled,
+  onPermissionGranted,
 }: PermissionDialogProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const setMeetingPrefs = useMeetingPrefsStore(
-    (state) => state.setMeetingPrefs,
-  );
+
+  const requestAccess = async (
+    constraints: MediaStreamConstraints,
+    prefs: {
+      isAudioEnabled?: boolean;
+      isVideoEnabled?: boolean;
+    },
+    kind: "audio" | "video" | "both",
+  ) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      setShowDialog(false);
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        stream.removeTrack(track);
+      });
+      if (typeof prefs.isAudioEnabled === "boolean") {
+        setIsAudioEnabled(prefs.isAudioEnabled);
+      }
+      if (typeof prefs.isVideoEnabled === "boolean") {
+        setIsVideoEnabled(prefs.isVideoEnabled);
+      }
+      onPermissionGranted(kind);
+    } catch (error) {
+      console.error("Error getting media stream:", error);
+      toast.error("Media Error", {
+        description:
+          "Could not access selected devices. Please try different ones.",
+      });
+    }
+  };
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
@@ -47,28 +80,16 @@ export default function PermissionDialog({
         <div className="flex w-full items-center justify-center gap-3 max-w-lg">
           <Button
             className="text-white py-5.5 rounded-full min-w-4/5 px-6"
-            onClick={() => {
-              navigator.mediaDevices
-                .getUserMedia({ audio: true, video: true })
-                .then((stream) => {
-                  setShowDialog(false);
-                  stream.getTracks().forEach((track) => {
-                    track.stop();
-                    stream.removeTrack(track);
-                  });
-                  setMeetingPrefs({
-                    isAudioEnabled: true,
-                    isVideoEnabled: true,
-                  });
-                })
-                .catch((error) => {
-                  console.error("Error getting media stream:", error);
-                  toast.error("Media Error", {
-                    description:
-                      "Could not access selected devices. Please try different ones.",
-                  });
-                });
-            }}
+            onClick={() =>
+              void requestAccess(
+                { audio: true, video: true },
+                {
+                  isAudioEnabled: true,
+                  isVideoEnabled: true,
+                },
+                "both",
+              )
+            }
           >
             Use microphone and camera
           </Button>
@@ -93,25 +114,13 @@ export default function PermissionDialog({
             <Button
               variant="outline"
               className="rounded-full flex-1 py-5 px-6.5 text-primary hover:text-primary hover:bg-primary/10!"
-              onClick={() => {
-                navigator.mediaDevices
-                  .getUserMedia({ audio: true })
-                  .then((stream) => {
-                    setShowDialog(false);
-                    stream.getTracks().forEach((track) => {
-                      track.stop();
-                      stream.removeTrack(track);
-                    });
-                    setMeetingPrefs({ isAudioEnabled: true });
-                  })
-                  .catch((error) => {
-                    console.error("Error getting media stream:", error);
-                    toast.error("Media Error", {
-                      description:
-                        "Could not access selected devices. Please try different ones.",
-                    });
-                  });
-              }}
+              onClick={() =>
+                void requestAccess(
+                  { audio: true },
+                  { isAudioEnabled: true },
+                  "audio",
+                )
+              }
             >
               Use microphone
             </Button>
@@ -119,25 +128,13 @@ export default function PermissionDialog({
             <Button
               variant="outline"
               className="rounded-full flex-1 py-5 px-6.5 text-primary hover:text-primary hover:bg-primary/10!"
-              onClick={() => {
-                navigator.mediaDevices
-                  .getUserMedia({ video: true })
-                  .then((stream) => {
-                    setShowDialog(false);
-                    stream.getTracks().forEach((track) => {
-                      track.stop();
-                      stream.removeTrack(track);
-                    });
-                    setMeetingPrefs({ isVideoEnabled: true });
-                  })
-                  .catch((error) => {
-                    console.error("Error getting media stream:", error);
-                    toast.error("Media Error", {
-                      description:
-                        "Could not access selected devices. Please try different ones.",
-                    });
-                  });
-              }}
+              onClick={() =>
+                requestAccess(
+                  { video: true },
+                  { isVideoEnabled: true },
+                  "video",
+                )
+              }
             >
               Use camera
             </Button>

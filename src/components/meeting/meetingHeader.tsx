@@ -24,10 +24,13 @@ import {
 
 export default function MeetingHeader({ meetingId }: { meetingId: string }) {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const meetingUrl = window.location.href;
 
-  const copyMeetingLink = () => {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link);
+  const copyMeetingLink = async () => {
+    if (!meetingUrl) {
+      return;
+    }
+    await navigator.clipboard.writeText(meetingUrl);
     toast.success("Meeting link copied", {
       description: "Share this link with others to invite them",
       duration: 2000,
@@ -36,7 +39,7 @@ export default function MeetingHeader({ meetingId }: { meetingId: string }) {
 
   return (
     <header className="relative border-b border-border/50 backdrop-blur-md bg-card/80 px-6 py-3 flex items-center justify-between z-20">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-r from-primary/5 via-transparent to-accent/5 pointer-events-none" />
       <div className="flex items-center relative z-10">
         <svg
           viewBox="0 0 87 30"
@@ -52,11 +55,7 @@ export default function MeetingHeader({ meetingId }: { meetingId: string }) {
 
         <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
           <DialogTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="text-foreground"
-            >
+            <Button size="icon" variant="ghost" className="text-foreground">
               <UserPlus className="h-5 w-5" />
             </Button>
           </DialogTrigger>
@@ -71,7 +70,7 @@ export default function MeetingHeader({ meetingId }: { meetingId: string }) {
 
             <div className="flex items-center space-x-2 mt-4">
               <Input
-                value={window.location.href}
+                value={meetingUrl}
                 className="flex-1 focus-visible:ring-0"
                 readOnly
               />
@@ -113,7 +112,7 @@ export default function MeetingHeader({ meetingId }: { meetingId: string }) {
 
             <div className="px-2 py-1.5">
               <div className="text-xs text-muted-foreground">Joining info</div>
-              <div className="text-sm">{window.location.href}</div>
+              <div className="text-sm">{meetingUrl}</div>
             </div>
 
             <DropdownMenuSeparator />

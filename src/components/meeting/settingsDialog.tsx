@@ -1,10 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { use, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import useMeetingPrefsStore, { Codecs } from "@/store/meetingPrefs";
+import { useShallow } from "zustand/react/shallow";
 import { useVideoResolutions } from "@/hooks/useVideoResolutions";
 import { useMediaDevices } from "@/hooks/useMediaDevices";
 import {
@@ -40,19 +41,16 @@ interface DeviceSelectProps {
   devices: MediaDeviceInfo[];
   activeDeviceId: string;
   onDeviceChange: (deviceId: string) => void;
-  testButton?: boolean;
 }
 
 const TABS = [
   {
     label: "Video" as const,
     icon: Video,
-    description: "Camera and video settings",
   },
   {
     label: "Audio" as const,
     icon: Volume2,
-    description: "Microphone and speaker settings",
   },
 ];
 
@@ -69,7 +67,7 @@ const DeviceSelect = ({
   const hasDevices = devices?.[0]?.deviceId;
   const selectedDevice = hasDevices
     ? devices.find((device) => device.deviceId === activeDeviceId)?.deviceId ||
-    devices[0].deviceId
+      devices[0].deviceId
     : "no-permission";
 
   return (
@@ -114,13 +112,23 @@ const DeviceSelect = ({
   );
 };
 
-const VideoSettings = () => {
-  const { videoDevices } = useMediaDevices();
-  const resolutions = useVideoResolutions(videoDevices.devices);
-  const { resolution, videoCodec, facingMode } = useMeetingPrefsStore(
-    (state) => state.video,
-  );
-  const setVideoPrefs = useMeetingPrefsStore((s) => s.setVideoPrefs);
+type MediaDevices = ReturnType<typeof useMediaDevices>;
+
+const VideoSettings = ({
+  videoDevices,
+}: {
+  videoDevices: MediaDevices["videoDevices"];
+}) => {
+  const resolutions = use(useVideoResolutions(videoDevices.activeDeviceId));
+  const { resolution, videoCodec, facingMode, setVideoPrefs } =
+    useMeetingPrefsStore(
+      useShallow((state) => ({
+        resolution: state.resolution,
+        videoCodec: state.videoCodec,
+        facingMode: state.facingMode,
+        setVideoPrefs: state.setVideoPrefs,
+      })),
+    );
 
   return (
     <div className="space-y-4">
@@ -148,17 +156,12 @@ const VideoSettings = () => {
               onValueChange={(resolutionHeight) => {
                 const resHeight = parseInt(resolutionHeight);
                 const res = resolutions.find((res) => res.height === resHeight);
-                console.log(
-                  resHeight,
-                  res?.width,
-                  res?.height,
-                  res?.encoding.maxFramerate,
-                );
                 if (!res) return;
                 setVideoPrefs({
                   resolution: {
-                    ...res,
-                    frameRate: res?.encoding.maxFramerate,
+                    width: res.width,
+                    height: res.height,
+                    frameRate: res.encoding.maxFramerate,
                   },
                 });
               }}
@@ -285,9 +288,13 @@ const VideoSettings = () => {
   );
 };
 
-const AudioSettings = () => {
-  const { audioDevices, speakerDevices } = useMediaDevices();
-
+const AudioSettings = ({
+  audioDevices,
+  speakerDevices,
+}: {
+  audioDevices: MediaDevices["audioDevices"];
+  speakerDevices: MediaDevices["speakerDevices"];
+}) => {
   return (
     <div className="space-y-4">
       <DeviceSelect
@@ -304,17 +311,19 @@ const AudioSettings = () => {
         devices={speakerDevices.devices}
         activeDeviceId={speakerDevices.activeDeviceId}
         onDeviceChange={speakerDevices.setActiveMediaDevice}
-        testButton
       />
     </div>
   );
 };
 
 export default function SettingsDialog() {
-  const [isVideoTab, setIsVideoTab] = useState<boolean>(true);
+  const [activeTab, setActiveTab] =
+    useState<(typeof TABS)[number]["label"]>("Video");
+  const [open, setOpen] = useState(false);
+  const { audioDevices, speakerDevices, videoDevices } = useMediaDevices();
 
   return (
-    <Dialog defaultOpen={false}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           size="icon"
@@ -327,66 +336,69 @@ export default function SettingsDialog() {
 
       <DialogTitle />
 
-      <DialogContent
-        showCloseButton={false}
-        className="overflow-hidden p-0 bg-background outline-none shadow-lg gap-0"
-      >
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-primary/10 rounded-md">
-              <Settings className="h-4 w-4 text-primary" />
+      {open ? (
+        <DialogContent
+          showCloseButton={false}
+          className="overflow-hidden p-0 bg-background outline-none shadow-lg gap-0"
+        >
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-primary/10 rounded-md">
+                <Settings className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold">Settings</h1>
+                <p className="text-xs text-muted-foreground">
+                  Configure preferences
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold">Settings</h1>
-              <p className="text-xs text-muted-foreground">
-                Configure preferences
-              </p>
-            </div>
-          </div>
-          <DialogClose asChild>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0 rounded-md"
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </DialogClose>
-        </div>
-
-        <div className="border-b border-border bg-muted/30 flex">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = isVideoTab
-              ? tab.label === "Video"
-              : tab.label === "Audio";
-            return (
-              <button
-                key={tab.label}
-                onClick={() => setIsVideoTab(!isVideoTab)}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 p-3 text-sm font-medium transition-all",
-                  isActive &&
-                  "text-primary border-b-2 border-primary bg-background",
-                  !isActive &&
-                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                )}
+            <DialogClose asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0 rounded-md"
               >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </DialogClose>
+          </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {isVideoTab ? (
-            <VideoSettings />
-          ) : (
-            <AudioSettings />
-          )}
-        </div>
-      </DialogContent>
+          <div className="border-b border-border bg-muted/30 flex">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.label;
+              return (
+                <button
+                  key={tab.label}
+                  onClick={() => setActiveTab(tab.label)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 p-3 text-sm font-medium transition-all",
+                    isActive &&
+                      "text-primary border-b-2 border-primary bg-background",
+                    !isActive &&
+                      "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {activeTab === "Video" ? (
+              <VideoSettings videoDevices={videoDevices} />
+            ) : (
+              <AudioSettings
+                audioDevices={audioDevices}
+                speakerDevices={speakerDevices}
+              />
+            )}
+          </div>
+        </DialogContent>
+      ) : null}
     </Dialog>
   );
 }

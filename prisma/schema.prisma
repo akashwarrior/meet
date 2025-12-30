@@ -22,25 +22,27 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  Meetings Meetings[]
+  meetings Meeting[]
 
   // indexes
-  emailVerified Boolean
+  emailVerified Boolean   @default(false)
   sessions      Session[]
   accounts      Account[]
 
   @@map("user")
 }
 
-model Meetings {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
+model Meeting {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  allowGuestJoin Boolean  @default(false)
 
   // Relations
   hostId String
   host   User   @relation(fields: [hostId], references: [id])
 
   @@index([hostId])
+  @@map("Meetings")
 }
 
 model Session {
@@ -55,6 +57,7 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
+  @@index([userId])
   @@map("session")
 }
 
@@ -74,6 +77,8 @@ model Account {
   createdAt             DateTime
   updatedAt             DateTime
 
+  @@unique([providerId, accountId])
+  @@index([userId])
   @@map("account")
 }
 
@@ -85,5 +90,7 @@ model Verification {
   createdAt  DateTime?
   updatedAt  DateTime?
 
+  @@index([identifier])
+  @@index([expiresAt])
   @@map("verification")
 }

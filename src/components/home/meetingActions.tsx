@@ -16,27 +16,52 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+type RequestError = Error & { status?: number };
+
+const getErrorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
+
+const requestJson = async <T,>(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<T> => {
+  const response = await fetch(input, init);
+  const body = (await response.json()) as T & { error?: string };
+
+  if (!response.ok) {
+    const error = new Error(body?.error ?? "Request failed") as RequestError;
+    error.status = response.status;
+    throw error;
+  }
+
+  return body;
+};
+
 export default function MeetingActions() {
   const router = useRouter();
   const [meetingLink, setMeetingLink] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState(
+    "Creating your meeting...",
+  );
   const meetingCodeRef = useRef<HTMLInputElement>(null);
 
   const generateMeetingLink = async (): Promise<string | null> => {
     try {
+      setLoadingMessage("Creating your meeting...");
       setLoading(true);
-      const response = await fetch("/api/meetings", { method: "POST" });
-      const res = await response.json();
-      if (response.ok) {
-        return res.link;
-      } else {
-        toast.error(res.error, {
-          description: "Please try again later",
-        });
-        return null;
-      }
+      const meeting = await requestJson<{ link: string }>("/api/meetings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ allowGuestJoin: false }),
+      });
+      return meeting.link;
     } catch (error) {
-      toast.error("Failed to create meeting", { description: String(error) });
+      toast.error(getErrorMessage(error, "Failed to create meeting"), {
+        description: "Please try again later",
+      });
       return null;
     } finally {
       setLoading(false);
@@ -61,6 +86,30 @@ export default function MeetingActions() {
     }
   };
 
+  const createGuestFriendlyMeeting = async () => {
+    try {
+      setLoadingMessage("Creating guest-friendly meeting...");
+      setLoading(true);
+      const meeting = await requestJson<{ link: string }>("/api/meetings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ allowGuestJoin: true }),
+      });
+      setMeetingLink(meeting.link);
+      toast.success("Guest access enabled", {
+        description: "Anyone with this link can join.",
+      });
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to create meeting"), {
+        description: "Please try again later",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const joinMeeting = async () => {
     const meetingCode = meetingCodeRef.current?.value || "";
     const id = extractMeetingId(meetingCode);
@@ -74,22 +123,17 @@ export default function MeetingActions() {
     }
 
     try {
+      setLoadingMessage("Finding your meeting...");
       setLoading(true);
-      const response = await fetch(`/api/meetings/${id}`);
-      const res = await response.json();
-
-      if (response.ok) {
-        toast.success(res.message, {
-          description: "Redirecting to meeting...",
-        });
-        router.push(`/meeting/${id}`);
-      } else {
-        toast.error(res.error, {
-          description: "Please check the meeting code and try again",
-        });
-      }
-    } catch {
-      toast.error("Failed to join meeting", {
+      const meeting = await requestJson<{ message: string }>(
+        `/api/meetings/${id}`,
+      );
+      toast.success(meeting.message, {
+        description: "Redirecting to meeting...",
+      });
+      router.push(`/meeting/${id}`);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to join meeting"), {
         description: "Please check the meeting code and try again",
       });
     } finally {
@@ -108,7 +152,7 @@ export default function MeetingActions() {
           </Button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] bg-background">
+        <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) bg-background">
           <div className="w-full h-full bg-background overflow-hidden">
             <DropdownMenuItem
               onClick={startInstantMeeting}
@@ -121,6 +165,12 @@ export default function MeetingActions() {
               className="cursor-pointer px-4 py-3 hover:bg-primary/20"
             >
               Create a meeting for later
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={createGuestFriendlyMeeting}
+              className="cursor-pointer px-4 py-3 hover:bg-primary/20 border-t"
+            >
+              Create a guest-friendly meeting
             </DropdownMenuItem>
           </div>
         </DropdownMenuContent>
@@ -151,10 +201,7 @@ export default function MeetingActions() {
         onJoinNow={(link) => router.push(`/meeting/${extractMeetingId(link)}`)}
       />
 
-      <LoadingDialog
-        open={loading}
-        message={`${meetingCodeRef.current?.value ? "Finding" : "Creating"} your meeting...`}
-      />
+      <LoadingDialog open={loading} message={loadingMessage} />
     </div>
   );
 }

@@ -1,11 +1,15 @@
+import "server-only";
+
 import { PrismaClient } from "@prisma/client";
+import { getNodeEnv } from "@/lib/env.server";
 
 const globalForPrisma = global as unknown as {
-  prisma: PrismaClient;
+  prisma?: PrismaClient;
 };
+const nodeEnv = getNodeEnv();
 
 const prisma = globalForPrisma.prisma || new PrismaClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (nodeEnv !== "production") globalForPrisma.prisma = prisma;
 
 export default prisma;

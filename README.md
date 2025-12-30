@@ -4,18 +4,18 @@
 
 # Meet
 
-Real‑time video meetings for teams and communities fast, reliable, and easy to host yourself.
+Real-time video meetings for teams and communities, fast, reliable, and easy to host yourself.
 
 ## What is Meet?
 
-Meet is an open‑source video meeting application built on Next.js and LiveKit. It provides low‑latency audio/video, a clean UI, and simple authentication so you can spin up secure meetings in minutes.
+Meet is an open-source video meeting application built on Next.js and LiveKit. It provides low-latency audio/video, a clean UI, and simple authentication so you can spin up secure meetings in minutes.
 
 ## Why Meet?
 
-- ✅ **Open‑Source** – Transparent, forkable, and extensible.
+- ✅ **Open-Source** – Transparent, forkable, and extensible.
 - 🦾 **LiveKit‑Powered** – Adaptive streaming with a modern SFU.
 - 🔒 **Privacy‑First** – You control your infrastructure and data.
-- ⚙️ **Self‑Hosting Freedom** – Run locally or deploy anywhere.
+- ⚙️ **Self-Hosting Freedom** – Run locally or deploy anywhere.
 - 🚀 **Developer‑Friendly** – TypeScript, Prisma, and a modular UI.
 
 ## Tech Stack
@@ -31,7 +31,7 @@ Meet is an open‑source video meeting application built on Next.js and LiveKit.
 
 ### Prerequisites
 
-- Node.js v18+ and npm v10+
+- Node.js v18+ and pnpm v10+
 - Docker (optional, for running PostgreSQL locally)
 
 Before running the app, configure environment variables. See Environment Variables below.
@@ -43,7 +43,7 @@ Before running the app, configure environment variables. See Environment Variabl
 ```bash
 git clone https://github.com/akashwarrior/meet.git
 cd meet
-npm install
+pnpm install
 ```
 
 2. Start PostgreSQL (Local, via Docker)
@@ -92,14 +92,14 @@ LIVEKIT_API_SECRET=secret
 4. Initialize the Database
 
 ```bash
-npm run generate
-npm run db:migrate
+pnpm run db:generate
+pnpm run db:migrate
 ```
 
 5. Start the App
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Open http://localhost:3000
@@ -129,9 +129,9 @@ You can use LiveKit Cloud or a self‑hosted LiveKit server.
 
 The project uses Prisma with PostgreSQL.
 
-- Generate client: `npm run generate`
-- Apply migrations: `npm run db:migrate`
-- Inspect data (optional): `npx prisma studio`
+- Generate client: `pnpm run db:generate`
+- Apply migrations: `pnpm run db:migrate`
+- Inspect data (optional): `pnpm run db:studio`
 
 ## Authentication
 
@@ -149,12 +149,15 @@ Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` in `.env`. Better Auth provides a
 
 ## Scripts
 
-- `npm run dev` – Start the development server
-- `npm run build` – Build for production
-- `npm run start` – Start the production server
-- `npm run generate` – Generate Prisma client
-- `npm run db:migrate` – Run Prisma migrations in dev
-- `npm run lint` – Lint project
+- `pnpm run dev` – Start the development server
+- `pnpm run build` – Build for production
+- `pnpm run start` – Start the production server
+- `pnpm run db:generate` – Generate the Prisma client
+- `pnpm run db:migrate` – Run Prisma migrations in dev
+- `pnpm run db:studio` – Open Prisma Studio
+- `pnpm run lint` – Run ESLint
+- `pnpm run typecheck` – Run TypeScript in no-emit mode
+- `pnpm run check` – Run lint, typecheck, and production build
 
 ---
 

@@ -1,29 +1,39 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
 import { Mic, MicOff } from "lucide-react";
-import { Track, type LocalTrackPublication, type RemoteTrackPublication } from "livekit-client";
+import {
+  Track,
+  type LocalTrackPublication,
+  type RemoteTrackPublication,
+} from "livekit-client";
 
 interface ParticipantProps {
-  identity: string;
   userName: string;
   isCameraEnabled: boolean;
   isMicrophoneEnabled: boolean;
-  videoTrackPublications: Map<string, RemoteTrackPublication> | Map<string, LocalTrackPublication>;
+  videoTrackPublications: Map<
+    string,
+    RemoteTrackPublication | LocalTrackPublication
+  >;
 }
 
 const Participant = ({
-  identity,
   userName,
   isCameraEnabled,
   isMicrophoneEnabled,
-  videoTrackPublications
+  videoTrackPublications,
 }: ParticipantProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const videoTrack = videoTrackPublications.values().toArray().filter(
-    (publication) => publication.track?.kind === Track.Kind.Video
-  )?.[0]?.track;
+  const videoTrack = useMemo(() => {
+    for (const publication of videoTrackPublications.values()) {
+      if (publication.track?.kind === Track.Kind.Video) {
+        return publication.track;
+      }
+    }
+    return undefined;
+  }, [videoTrackPublications]);
 
   useEffect(() => {
     if (videoRef.current && videoTrack) {
@@ -36,13 +46,11 @@ const Participant = ({
 
   return (
     <motion.div
-      key={identity}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
       className={`${isCameraEnabled ? "w-fit h-fit bg-transparent" : "w-full h-full bg-background"} overflow-hidden m-auto max-w-full max-h-full relative`}
-      layout
     >
       <video
         autoPlay
@@ -74,22 +82,7 @@ const Participant = ({
             <div className="absolute bottom-20 left-20 bg-[#3291ff] w-1/4 h-1/4 dark:w-1/6 dark:h-1/6 blur-[150px] rounded-full"></div>
             <div className="absolute top-20 right-20 bg-[#79ffe1] w-1/4 h-1/4 dark:w-1/6 dark:h-1/6 blur-[150px] rounded-full"></div>
           </div>
-          <div
-            ref={(element) => {
-              if (element) {
-                const width = element.parentElement?.clientWidth || 1;
-                const height = element.parentElement?.clientHeight || 1;
-                const maxSize = Math.min(
-                  Math.max(width, height) / 3.5,
-                  height / 2,
-                );
-                element.style.width = `${maxSize}px`;
-                element.style.height = `${maxSize}px`;
-                element.style.fontSize = `${maxSize / 5}px`;
-              }
-            }}
-            className="bg-primary-foreground text-primary text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full"
-          >
+          <div className="bg-primary-foreground text-primary font-medium size-[clamp(2.5rem,8vw,6rem)] text-[clamp(0.75rem,2vw,1.25rem)] flex items-center justify-center rounded-full">
             {userName.charAt(0).toUpperCase()}
           </div>
         </motion.div>
@@ -98,4 +91,4 @@ const Participant = ({
   );
 };
 
-export default Participant;
+export default memo(Participant);

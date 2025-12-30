@@ -1,58 +1,55 @@
-import { toast } from "sonner";
-import { useEffect, useState } from "react";
-import { type VideoPreset, VideoPresets } from "livekit-client";
+import { useMemo } from "react";
 import useMeetingPrefsStore from "@/store/meetingPrefs";
+import { type VideoPreset, VideoPresets } from "livekit-client";
 
-export const useVideoResolutions = (videoDevices: MediaDeviceInfo[]) => {
-  const [resolutions, setResolutions] = useState<VideoPreset[]>([]);
-  const { resolution } = useMeetingPrefsStore((state) => state.video);
+export const loadVideoResolutions = async (
+  deviceId: string,
+): Promise<VideoPreset[]> => {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      deviceId: { ideal: deviceId },
+    },
+  });
+
+  try {
+    const track = stream.getVideoTracks()[0];
+    const { width, height } = track?.getCapabilities() ?? {};
+
+    return Object.values(VideoPresets).filter(
+      (preset) =>
+        preset.width <= Math.min(width?.max ?? 1920) &&
+        preset.height <= Math.min(height?.max ?? 1080),
+    );
+  } finally {
+    stream.getTracks().forEach((track) => track.stop());
+  }
+};
+
+export const useVideoResolutions = (deviceId?: string): Promise<VideoPreset[]> => {
   const setVideoPrefs = useMeetingPrefsStore((state) => state.setVideoPrefs);
 
-  useEffect(() => {
-    if (
-      !navigator.mediaDevices ||
-      !videoDevices.length ||
-      !videoDevices[0].deviceId
-    ) {
-      return;
+  const resolutions = useMemo(async(): Promise<VideoPreset[]> => {
+    if(!deviceId || !navigator.mediaDevices){
+      return [];
+    }
+    
+    const resolutions = await  loadVideoResolutions(deviceId);
+    const highestRes = resolutions.at(-1);
+    if (!highestRes) return resolutions;
+
+    const selectedResolution = useMeetingPrefsStore.getState().resolution;
+    if (!selectedResolution) {
+      setVideoPrefs({
+        resolution: {
+          width: Math.min(highestRes.width, 1920),
+          height: Math.min(highestRes.height, 1080),
+          frameRate: highestRes.encoding.maxFramerate,
+        },
+      });
     }
 
-    const initializeResolutions = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-        });
-        const { width, height } = stream.getVideoTracks()[0].getCapabilities();
-
-        stream.getTracks().forEach((track) => track.stop());
-
-        const availableResolutions = Object.values(VideoPresets).filter(
-          (res) =>
-            res.width <= (width?.max || 1920) &&
-            res.height <= (height?.max || 1080),
-        );
-
-        setResolutions(availableResolutions);
-
-        const highestRes =
-          availableResolutions[availableResolutions.length - 1];
-        if (highestRes && !resolution) {
-          setVideoPrefs({
-            resolution: {
-              width: highestRes.width,
-              height: highestRes.height,
-              frameRate: highestRes.encoding.maxFramerate,
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Error getting devices:", error);
-        toast.error("Error getting devices. Please check your permissions.");
-      }
-    };
-
-    initializeResolutions();
-  }, [videoDevices]);
+    return resolutions;
+  }, [deviceId]);
 
   return resolutions;
 };

@@ -1,40 +1,37 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
-const myFont = localFont({
-  src: [
-    {
-      weight: "400",
-      path: "../fonts/regular.woff2",
-    },
-    {
-      weight: "700",
-      path: "../fonts/bold.woff2",
-    },
-  ],
+const geist = Geist({
+  subsets: ["latin"],
+  display: "swap",
   preload: true,
 });
 
 export const metadata: Metadata = {
   icons: { icon: "/icon.svg" },
-  title: "Meet - Professional Video Conferencing",
+  title: "Meet",
   description:
-    "Connect securely with end-to-end encryption. Host video meetings and collaborate with just a few clicks.",
-  keywords:
-    "video conferencing, online meetings, collaboration, end-to-end encryption, secure communication",
+    "Production-grade video meetings built with Next.js, LiveKit, Prisma, and Better Auth.",
+  keywords: [
+    "video conferencing",
+    "online meetings",
+    "livekit",
+    "next.js",
+    "team collaboration",
+  ],
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={myFont.className}>
+      <body className={geist.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -43,7 +40,7 @@ export default async function RootLayout({
         >
           {children}
         </ThemeProvider>
-        <Toaster richColors theme="light" />
+        <Toaster richColors />
       </body>
     </html>
   );
